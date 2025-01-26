@@ -5,7 +5,7 @@ description: Ensemble methods combine multiple simple learning algorithms to ach
 tags: Decision-Trees Random-Forest Boosting XGBoost 
 giscus_comments: true
 date: 2025-01-26
-featured: true
+featured: false
 mermaid:
   enabled: true
   zoomable: true
