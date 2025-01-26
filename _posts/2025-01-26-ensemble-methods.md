@@ -48,7 +48,7 @@ toc:
   - name: Gradient Boosting
   - name: XGBoost
   - name: Experiments
-  - name: Code
+  - name: Appendix
 
 # Below is an example of injecting additional post-specific styles.
 # If you use this post as a template, delete this _styles block.
