@@ -47,7 +47,7 @@ toc:
   - name: Extremely Randomized Trees
   - name: Gradient Boosting
   - name: XGBoost
-  - name: Experiments
+  - name: Experiment
   - name: Appendix
 
 # Below is an example of injecting additional post-specific styles.
