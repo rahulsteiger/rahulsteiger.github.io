@@ -27,7 +27,7 @@ ninja.data = [{
       
         title: "Ensemble Methods",
       
-      description: "Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This blog post is an adaptation of a group project I completed during one of my courses at the National University of Singapore.",
+      description: "Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This blog post is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.",
       section: "Posts",
       handler: () => {
         
