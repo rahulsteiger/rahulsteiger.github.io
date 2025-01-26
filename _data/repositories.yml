@@ -1,14 +1,10 @@
 github_users:
-  - torvalds
-  - alshedivat
+  - imagoodfella
 
 repo_description_lines_max: 2
 
 github_repos:
-  - alshedivat/al-folio
-  - jekyll/jekyll
-  - twbs/bootstrap
-  - jquery/jquery
-  - FortAwesome/Font-Awesome
-  - mathjax/MathJax
-  - jpswalsh/academicons
+  - imagoodfella/data-science-lab
+  - imagoodfella/hack4good
+  - imagoodfella/machine_perception
+  - imagoodfella/aml_projects
