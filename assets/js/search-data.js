@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-ensemble-methods",
+        },{id: "post-biased-coin",
+      
+        title: "Biased Coin",
+      
+      description: "This blog post presents a nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/blog/2025/biased-coin/";
+        
+      },
+    },{id: "post-ensemble-methods",
       
         title: "Ensemble Methods",
       
