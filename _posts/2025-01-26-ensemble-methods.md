@@ -20,7 +20,7 @@ tikzjax: true
 typograms: true
 
 authors:
-  - name: J.S
+  - name: Julian Santen
     affiliations:
       name: NUS, ETH Zurich
   - name: Rahul Steiger
