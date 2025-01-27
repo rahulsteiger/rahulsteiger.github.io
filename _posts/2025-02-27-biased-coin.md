@@ -3,7 +3,7 @@ layout: distill
 title: Biased Coin
 description: This blog post presents a nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me. 
 
-tags: coin-tosses probability
+tags: coin-tosses probability quantitative-trading
 giscus_comments: true
 date: 2025-01-27
 featured: false
