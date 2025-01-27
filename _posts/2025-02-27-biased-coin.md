@@ -89,7 +89,7 @@ Let $X_n$ denote the payoff after the $n$'th toss, and $H$ denote the number of 
 
 $$\mathbb{E}[X_n | p] = \mathbb{E}\left[X_n \bigg | \frac{H}{n} < 0.5, p\right] P\left[\frac{H}{n} < 0.5 | p\right] + \mathbb{E}\left[X_n \bigg | \frac{H}{n} > 0.5, p\right] P\left[\frac{H}{n} > 0.5 | p \right]$$
 
-Since we predict heads if $\frac{H}{n} > 0.5$, we have that
+Since we predict tails if $\frac{H}{n} < 0.5$, we have that
 
 $$\mathbb{E}\left[X_n \bigg | \frac{H}{n} < 0.5, p\right] = (1 - p) \cdot 1 + p \cdot (-1) = 1 - 2p$$
 
