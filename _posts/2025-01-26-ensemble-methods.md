@@ -22,10 +22,10 @@ typograms: true
 authors:
   - name: Julian Santen
     affiliations:
-      name: NUS, ETH Zurich
+      name: ETH Zurich
   - name: Rahul Steiger
     affiliations:
-      name: NUS, ETH Zurich
+      name: ETH Zurich
 
 
 bibliography: 2025-01-26-ensemble-methods.bib
