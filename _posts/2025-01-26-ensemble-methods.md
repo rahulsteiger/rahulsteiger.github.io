@@ -4,7 +4,7 @@ title: Ensemble Methods
 description: Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This blog post is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.
 
 tags: decision-trees random-forest boosting xgboost 
-giscus_comments: true
+giscus_comments: false
 date: 2025-01-26
 featured: false
 mermaid:
