@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-biased-coin",
+        },{id: "post-running-deepseek-r1-locally",
+      
+        title: "Running DeepSeek R1 locally",
+      
+      description: "This blog post presents the steps required to run inference for DeepSeek R1 using Llama.cpp on a single HPC node equipped with 4 A100 GPUs and 1 TB of memory.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/blog/2025/llamacpp-deepseek/";
+        
+      },
+    },{id: "post-biased-coin",
       
         title: "Biased Coin",
       
