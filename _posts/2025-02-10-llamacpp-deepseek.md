@@ -180,5 +180,22 @@ export FILES=(
   "DeepSeek-R1-Q8_0/DeepSeek-R1.Q8_0-00015-of-00015.gguf"
 )
 
-TODO: Since I still need to download like 750 GB of data...
+```bash
+./llama-server \
+  --port 8192 \
+  --model "$LOCAL_DIR/${FILES[0]}" \
+  --n-gpu-layers 22 \
+  --tensor-split 24,25,25,25 \
+  --split-mode row \
+  --flash-attn \
+  --ctx-size 16384
 ```
+
+After downloading nearly 750 GB of data, waiting for the model to generate anything, I went to sleep and work on it tomorrow.
+```
+
+## Geht es besser?
+TODO: Try building and tuning llama.cpp with AMD BLIS. 
+
+## Larger?
+TODO: Run 16 Bit precision model (that does not fit into memory)
