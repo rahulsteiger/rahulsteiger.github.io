@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Running DeepSeek R1 locally
-description: This blog post presents the steps required to run inference for DeepSeek R1 using Llama.cpp on a single HPC node equipped with 4 A100 GPUs and 1 TB of memory.
+description: This blog post presents the steps required to run inference for DeepSeek R1 using llama.cpp on a single HPC node equipped with 4 A100 GPUs and 1 TB of memory.
 
 tags: deepseek llama.cpp llms
 giscus_comments: false
@@ -34,7 +34,7 @@ bibliography:
 #   - we may want to automate TOC generation in the future using
 #     jekyll-toc plugin (https://github.com/toshimaru/jekyll-toc).
 toc:
-  - name: Llama.cpp setup
+  - name: llama.cpp setup
     # if a section has subsections, you can add them as follows:
     # subsections:
     #   - name: Example Child Subsection 1
@@ -66,16 +66,16 @@ Running these LLMs requires significant computational resources. Fortunately, I 
 
 Although I have not tried it myself, you should be able to run the 1.58 quantization model with `256 GB` of memory and just a CPU. However, this will likely be very slow and would benefit immensely from multiple GPUs. At first glance, this might still seem like expensive hardware, however the cost still represents a decrease of at least one order of magnitude compared to top-of-the-line systems. 
 
-## Llama.cpp setup
+## llama.cpp setup
 
-The main goal of Llama.cpp is to enable LLM inference with minimal setup and state-of-the-art performance on a wide range of hardware. More information can be found [here](https://github.com/ggerganov/llama.cpp).
+The main goal of llama.cpp is to enable LLM inference with minimal setup and state-of-the-art performance on a wide range of hardware. More information can be found [here](https://github.com/ggerganov/llama.cpp).
 
 Clone the github repository:
 ```bash
 git clone git@github.com:ggerganov/llama.cpp.git && cd llama.cpp
 ```
 
-Build Llama.cpp:
+Build llama.cpp:
 ```bash
 cmake -B build -DGGML_NATIVE=OFF -DGGML_CUDA=ON -DLLAMA_CURL=ON -DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined .
 cmake --build build --config Release -j
@@ -184,18 +184,68 @@ export FILES=(
 ./llama-server \
   --port 8192 \
   --model "$LOCAL_DIR/${FILES[0]}" \
-  --n-gpu-layers 22 \
+  --n-gpu-layers 20 \
   --tensor-split 24,25,25,25 \
   --split-mode row \
   --flash-attn \
   --ctx-size 16384
 ```
 
-After downloading nearly 750 GB of data, waiting for the model to generate anything, I went to sleep and work on it tomorrow.
-```
+Running the same prompt as before, we get a total of 1.57 tokens per second. 
 
 ## Geht es besser?
-TODO: Try building and tuning llama.cpp with AMD BLIS. 
+At this point, our model does not fit into VRAM, meaning that we will have to use CPU for some part of the inference. Consequently, we are bound by the performance of the CPU. As I learnt in my first semester lectures, you should always ask yourself: geht es besser? 
+
+One could potentially increase the CPU performance if we compiled llama.cpp differently. We will be using the [BLIS](https://github.com/flame/blis/tree/master) libary to accelerate linear algebra operations on the CPU. 
+
+Create a folder `dependencies` in the home directory and go into it:
+
+```bash
+mkdir dependencies && cd dependencies
+```
+
+We then clone the BLIS repository and go into it:
+
+```bash
+git clone git@github.com:amd/blis.git && cd blis
+```
+
+We configure and build BLIS as follows:
+
+```bash
+./configure --enable-cblas -t openmp,pthreads zen3 && make -j
+```
+
+We export the following variables and rebuild llama.cpp in a different folder with some additional flags:
+
+```bash
+cd ~/llama.cpp
+
+export BLIS_PREFIX="$HOME/dependencies/blis"
+export BLAS_LIBRARIES="$BLIS_PREFIX/lib/zen3/libblis-mt.so"
+export BLAS_INCLUDE_DIRS="$BLIS_PREFIX/include/zen3"
+export LD_LIBRARY_PATH="$BLIS_PREFIX/lib/zen3:$LD_LIBRARY_PATH"
+
+cmake -B blis_build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=FLAME -DBLAS_LIBRARIES=$BLAS_LIBRARIES -DBLAS_INCLUDE_DIRS=$BLAS_INCLUDE_DIRS -DGGML_NATIVE=OFF -DGGML_CUDA=ON -DLLAMA_CURL=ON -DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined .
+cmake --build blis_build --config Release -j 
+``` 
+
+We can run llama.cpp as before with:
+
+```bash
+cd blis_build/bin
+
+./llama-server \
+  --port 8192 \
+  --model "$LOCAL_DIR/${FILES[0]}" \
+  --n-gpu-layers 20 \
+  --tensor-split 24,25,25,25 \
+  --split-mode row \
+  --flash-attn \
+  --ctx-size 16384
+``` 
+
+Running the same prompt as before, we get a total of 1.57 tokens per second. 
 
 ## Larger?
 TODO: Run 16 Bit precision model (that does not fit into memory)
