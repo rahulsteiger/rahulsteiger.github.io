@@ -247,4 +247,54 @@ Running the same prompt as before, we get roughly 2.0 tokens per second as well.
 
 ## Larger?
 
-TODO: Run 16 Bit precision model (that does not fit into memory)
+Thanks to memory paging, we can run models that do not fit into our available RAM and VRAM by swapping out memory pages to disk. So, let's try running DeepSeek-R1-BF16. The weights on Hugging Face are roughly 1.5 TB, which requires us to download 30 GGUF files. 
+
+```bash
+export FILES=(
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00001-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00002-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00003-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00004-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00005-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00006-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00007-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00008-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00009-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00010-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00011-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00012-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00013-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00014-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00015-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00016-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00017-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00018-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00019-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00020-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00021-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00022-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00023-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00024-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00025-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00026-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00027-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00028-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00029-of-00030.gguf"
+  "DeepSeek-R1-BF16/DeepSeek-R1.BF16-00030-of-00030.gguf"
+)
+```
+
+Once the download is complete, I will try to run it with (TODO): 
+
+```bash
+cd blis_build/bin
+
+./llama-server \
+  --port 8192 \
+  --model "$LOCAL_DIR/${FILES[0]}" \
+  --n-gpu-layers 10 \
+  --tensor-split 24,25,25,25 \
+  --split-mode row \
+  --flash-attn \
+  --ctx-size 16384
+``` 
