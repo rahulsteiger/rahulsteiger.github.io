@@ -64,8 +64,6 @@ _styles: >
 
 Running these LLMs requires significant computational resources. Fortunately, I have access to HPC hardware thanks to my previous participation in Team RACKlette during my bachelor's. The node I am using for this experiment has 2 `AMD EPYC 7773X 64-Core` CPUs, 4 `NVIDIA A100 80GB` GPUs, and `1 TB` of memory. This is the only reason I am able to play around with LLMs. 
 
-Although I have not tried it myself, you should be able to run the 1.58 quantization model with `256 GB` of memory and just a CPU. However, this will likely be very slow and would benefit immensely from multiple GPUs. At first glance, this might still seem like expensive hardware, however the cost still represents a decrease of at least one order of magnitude compared to top-of-the-line systems. 
-
 ## llama.cpp setup
 
 The main goal of llama.cpp is to enable LLM inference with minimal setup and state-of-the-art performance on a wide range of hardware. More information can be found [here](https://github.com/ggerganov/llama.cpp).
@@ -191,12 +189,12 @@ export FILES=(
   --ctx-size 16384
 ```
 
-Running the same prompt as before, we get a total of 1.57 tokens per second. 
+Running the same prompt as before, we get roughly of 2.0 tokens per second. 
 
 ## Geht es besser?
 At this point, our model does not fit into VRAM, meaning that we will have to use CPU for some part of the inference. Consequently, we are bound by the performance of the CPU. As I learnt in my first semester lectures, you should always ask yourself: geht es besser? 
 
-One could potentially increase the CPU performance if we compiled llama.cpp differently. We will be using the [BLIS](https://github.com/flame/blis/tree/master) libary to accelerate linear algebra operations on the CPU. 
+One could potentially increase the CPU performance if we compiled llama.cpp differently. We will be using the [BLIS](https://github.com/flame/blis/tree/master) libary to see if we can accelerate linear algebra operations on the CPU. 
 
 Create a folder `dependencies` in the home directory and go into it:
 
@@ -213,7 +211,7 @@ git clone git@github.com:amd/blis.git && cd blis
 We configure and build BLIS as follows:
 
 ```bash
-./configure --enable-cblas -t openmp,pthreads zen3 && make -j
+./configure --prefix=. --enable-cblas -t pthreads zen3 && make -j && make install
 ```
 
 We export the following variables and rebuild llama.cpp in a different folder with some additional flags:
@@ -245,7 +243,8 @@ cd blis_build/bin
   --ctx-size 16384
 ``` 
 
-Running the same prompt as before, we get a total of 1.57 tokens per second. 
+Running the same prompt as before, we get roughly 2.0 tokens per second as well. I did not do proper benchmarking, but from my estimate, there does not seem to be a significant difference compared to the version without BLIS. After reading more into this and scouring GitHub for answers, I concluded that if raw inference speed is what you care about, you should probably look into other frameworks such as [TensorRT](https://github.com/NVIDIA/TensorRT). However, I still find the minimal setup and decent performance of llama.cpp to be what makes it great for experimentation.
 
 ## Larger?
+
 TODO: Run 16 Bit precision model (that does not fit into memory)
