@@ -284,7 +284,7 @@ export FILES=(
 )
 ```
 
-Once the download is complete, I will try to run it with (TODO): 
+Once the download is complete, you can run it with:
 
 ```bash
 cd blis_build/bin
@@ -298,3 +298,5 @@ cd blis_build/bin
   --flash-attn \
   --ctx-size 16384
 ``` 
+
+I got roughyl 1 token every 11 seconds, which is cool since it seems to be working, but is not useable in my opinion.
