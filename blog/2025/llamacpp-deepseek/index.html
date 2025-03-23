@@ -104,7 +104,7 @@ cmake <span class="nt">--build</span> build <span class="nt">--config</span> Rel
 <span class="nb">export </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$BLIS_PREFIX</span><span class="s2">/lib/zen3:</span><span class="nv">$LD_LIBRARY_PATH</span><span class="s2">"</span>
 
 cmake <span class="nt">-B</span> blis_build <span class="nt">-DGGML_BLAS</span><span class="o">=</span>ON <span class="nt">-DGGML_BLAS_VENDOR</span><span class="o">=</span>FLAME <span class="nt">-DBLAS_LIBRARIES</span><span class="o">=</span><span class="nv">$BLAS_LIBRARIES</span> <span class="nt">-DBLAS_INCLUDE_DIRS</span><span class="o">=</span><span class="nv">$BLAS_INCLUDE_DIRS</span> <span class="nt">-DGGML_NATIVE</span><span class="o">=</span>OFF <span class="nt">-DGGML_CUDA</span><span class="o">=</span>ON <span class="nt">-DLLAMA_CURL</span><span class="o">=</span>ON <span class="nt">-DCMAKE_EXE_LINKER_FLAGS</span><span class="o">=</span><span class="nt">-Wl</span>,--allow-shlib-undefined <span class="nb">.</span>
-cmake <span class="nt">--build</span> blis_build <span class="nt">--config</span> Release <span class="nt">-j</span> 
+cmake <span class="nt">--build</span> blis_build <span class="nt">--config</span> Release <span class="nt">-j</span>
 </code></pre></div></div> <p>We can run llama.cpp as before with:</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>blis_build/bin
 
 ./llama-server <span class="se">\</span>
