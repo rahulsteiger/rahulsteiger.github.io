@@ -3,7 +3,7 @@ layout: distill
 title: Ensemble Methods
 description: Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This blog post is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.
 
-tags: decision-trees random-forest boosting xgboost 
+tags: decision-trees random-forest boosting xgboost
 giscus_comments: false
 date: 2025-01-26
 featured: false
@@ -26,7 +26,6 @@ authors:
   - name: Rahul Steiger
     affiliations:
       name: ETH Zurich
-
 
 bibliography: 2025-01-26-ensemble-methods.bib
 
@@ -71,14 +70,14 @@ _styles: >
 
 ## Introduction
 
-Ensemble methods combine multiple simple learning algorithms to produce an overall better result. First, we will provide a brief overview of weak and strong learners and the concept of a decision tree. In the next step, we will introduce two ensemble methods based on bagging: random forests and extremely randomized trees. The second part of the blog post will detail gradient boosting algorithms, focusing on introducing the conventional Gradient Boosting Machine and discussing the principle ideas behind the notoriously popular method XGBoost. Finally, we will conclude with a comparative study of the performance of these models on a representative sample dataset. 
-
+Ensemble methods combine multiple simple learning algorithms to produce an overall better result. First, we will provide a brief overview of weak and strong learners and the concept of a decision tree. In the next step, we will introduce two ensemble methods based on bagging: random forests and extremely randomized trees. The second part of the blog post will detail gradient boosting algorithms, focusing on introducing the conventional Gradient Boosting Machine and discussing the principle ideas behind the notoriously popular method XGBoost. Finally, we will conclude with a comparative study of the performance of these models on a representative sample dataset.
 
 ### Weak vs Strong classifiers
 
 A so-called weak learner or base learner is an algorithm or model that performs "slightly better than chance" <d-cite key="murphy-2012" page="555"></d-cite>. This means that the model has some but minimal predictive power. This base learner could, for example, be a shallow decision tree such as a decision tree stump explored in [this section](#decision-trees). A strong learner is a model that can have an arbitrarily small error in the training data set <d-cite key="murphy-2012"></d-cite>.
 
 <strong> $\gamma$-Weak Learnability <d-cite key="shwartz-2014"></d-cite><d-cite key="princeton-weak-learnability"></d-cite></strong>
+
 <p>A learning problem is defined as $\gamma$-weakly learnable for a given hypothesis class $\mathcal{H}$ if for $\gamma > 0$ there exists a function $m_\mathcal{H} : (\delta, \gamma) \to \mathbb{N}$ and an effective algorithm such that for any $0 < \delta < 1$ when the algorithm processes $m_\mathcal{H}(\delta, \gamma)$ examples drawn from a distribution $\mathcal{D}$ over the input-output space $\mathcal{X} \times \mathcal{Y}$, it produces a hypothesis $h \in \mathcal{H}$ that achieves the following error rate with probability of least $1 - \delta$:</p>
 <p>
 $$
@@ -88,10 +87,9 @@ $$
 
 <p>Strong learnability can be defined completely analogously using the error bound $\mathrm{error}_{\mathcal{D}}(h) \leq \gamma$.</p>
 
-
 #### Combining weak regression learners to reduce variance
 
-Consider a standard regression problem with a dataset: $\mathcal{D} = \\{ (x_i, y_i) \mid i = 1, \dots, \lvert \mathcal{D} \rvert \\}$. 
+Consider a standard regression problem with a dataset: $\mathcal{D} = \\{ (x_i, y_i) \mid i = 1, \dots, \lvert \mathcal{D} \rvert \\}$.
 Assume we are given a set of $n$ regression estimators: $\hat{f}_1(x), \dots, \hat{f}_n(x)$. We define:
 
 $$
@@ -102,7 +100,7 @@ We can write the bias-variance decomposition of $\hat{f}$ as follows:
 
 $$
 \begin{align*}
-\mathbb{E}[(\hat{f}(x) - \mathbb{E}[y \mid x])^2] 
+\mathbb{E}[(\hat{f}(x) - \mathbb{E}[y \mid x])^2]
 &= (\mathbb{E}[\hat{f}(x)] - \mathbb{E}[y \mid x])^2 + \mathbb{E}[(\hat{f}(x) - \mathbb{E}[\hat{f}(x)])^2] \\
 &= \operatorname{Bias}[\hat{f}(x)]^2 + \operatorname{Var}[\hat{f}(x)]
 \end{align*}
@@ -112,7 +110,7 @@ By the definition of $\hat{f}$, the bias term simplifies to:
 
 $$
 \begin{align*}
-\operatorname{Bias}[\hat{f}(x)] 
+\operatorname{Bias}[\hat{f}(x)]
 &= \mathbb{E}[\hat{f}(x)] - \mathbb{E}[y|x] \\
 &= \frac{1}{n} \sum_{i=1}^n \mathbb{E}[\hat{f}_i(x)] - \mathbb{E}[y \mid x] \\
 &= \frac{1}{n} \sum_{i=1}^n [\mathbb{E}[\hat{f}_i(x)] - \mathbb{E}[y \mid x]] \\
@@ -124,12 +122,12 @@ By the definition of $\hat{f}$, the variance term can be rewritten as:
 
 $$
 \begin{align*}
-    \operatorname{Var}[\hat{f}(x)] 
+    \operatorname{Var}[\hat{f}(x)]
     &= \mathbb{E}[(\hat{f}(x) - \mathbb{E}[\hat{f}(x)])^2] \\
     &= \mathbb{E}\left[\left(\frac{1}{n} \sum_{i=1}^n \hat{f}_i(x) - \frac{1}{n} \sum_{i=1}^n \mathbb{E}[\hat{f}_i(x)]\right)^2\right] \\
     &= \mathbb{E}\left[\left(\frac{1}{n}\sum_{i=1}^n \left(\hat{f}_i(x) - \mathbb{E}[\hat{f}_i(x)]\right)\right)^2\right] \\
     &= \frac{1}{n^2} \sum_{i=1}^n \sum_{j=1}^n  \mathbb{E}\left[\left(\hat{f}_i(x) - \mathbb{E}[\hat{f}_i(x)]\right) \left(\hat{f}_j(x) - \mathbb{E}[\hat{f}_j(x)]\right)\right] \\
-    &= \frac{1}{n^2} \sum_{i=1}^n \operatorname{Var}[\hat{f}_i(x)] + \frac{1}{n^2} \sum_{i \neq j} \operatorname{Cov}[\hat{f}_i(x), \hat{f}_j(x)]  
+    &= \frac{1}{n^2} \sum_{i=1}^n \operatorname{Var}[\hat{f}_i(x)] + \frac{1}{n^2} \sum_{i \neq j} \operatorname{Cov}[\hat{f}_i(x), \hat{f}_j(x)]
 \end{align*}
 $$
 
@@ -153,7 +151,6 @@ Consequently, we can reduce the variance arbitrarily by just using more estimato
 
 Decision trees are a popular sequential model, relying on the recursive partition of the input space into disjoint subspaces and then training a model in each resulting region. The decision tree splits the space by applying a test to check if a specific value fulfills a certain splitting condition. Decision trees can be interpreted as a predictor $h : \mathcal{X} \to \mathcal{Y}$ where the prediction is based on the traversal of the tree from the root to a leaf. One of their main advantages is their natural interpretation. A decision tree can be used for both classification and regression purposes. However, we will focus on the former in this section. <d-cite key="murphy-2012"></d-cite> <d-cite key="shwartz-2014"></d-cite> <d-cite key="kotsiantis-2013"></d-cite>
 
-
 ### Main Idea
 
 <div class="row mt-3">
@@ -162,13 +159,14 @@ Decision trees are a popular sequential model, relying on the recursive partitio
     </div>
 </div>
 
-*Figure 1: Schematic representation of partitioning of the feature space into two disjoint subspaces based on feature ${x}_i$ and threshold $\theta$. The space for ${x}_i < \theta$ is patterned in red. Each side corresponds to exactly one leaf.*
+_Figure 1: Schematic representation of partitioning of the feature space into two disjoint subspaces based on feature ${x}_i$ and threshold $\theta$. The space for ${x}_i < \theta$ is patterned in red. Each side corresponds to exactly one leaf._
 
 Following the discussion in <d-cite key="shwartz-2014"></d-cite>, one way to split the data is by applying a threshold $\theta$ to a given numeric feature dimension. We can check if the $i$'th feature of $\mathbf{x}$ is smaller than the threshold: $x_i < \theta$. Therefore, we move to the left child if $\mathbb{1}_{[\mathbf{x}_i < \theta]}$ as illustrated in Figure 1. This then divides our $d$-dimensional space $\mathcal{X}=\mathbb{R}^d$ into two parts with a direct correspondence between the leaves and subspaces. In general, the decision tree divides the feature space into axis-aligned hyperplanes <d-cite key="rokach-2016"></d-cite>. It is also possible to follow a similar procedure for categorical values and check them against a set of values <d-cite key="kotsiantis-2013"></d-cite>.
 
 ### Growth Stage
 
-**Algorithm ID3** for $\{-1, 1\}^d \to \{-1, 1\}$, *adapted from <d-cite key="shwartz-2014"></d-cite>, <d-cite key="kaewrod-2018" fig="1"></d-cite>*
+**Algorithm ID3** for $\{-1, 1\}^d \to \{-1, 1\}$, _adapted from <d-cite key="shwartz-2014"></d-cite>, <d-cite key="kaewrod-2018" fig="1"></d-cite>_
+
 $$
 \begin{array}{ll}
 \textbf{Input:} & \text{Training set } S \subseteq \mathcal{D} = \{(\mathbf{x}_i, y_i) \mid \mathbf{x}_i \in \{-1, 1\}^d, y_i \in \{-1, 1\}\}_{i=1}^n, \\
@@ -226,7 +224,7 @@ The information gain from splitting $S$ on the feature $x_i$, denoted as $\opera
 
 $$
 \begin{align*}
-\operatorname{InfoGain}(S, i) 
+\operatorname{InfoGain}(S, i)
 &= \operatorname{H(S)} - \operatorname{H}(S \mid i) \\
 &= \operatorname{H(S)} - \sum_{v \in \operatorname{values}(i)} \frac{\mid S_i(v) \mid}{\mid S \mid} \cdot \operatorname {H}\left( S_i(v) \right),
 \end{align*}
@@ -251,6 +249,7 @@ Deep decision trees are prone to overfitting, limiting their generalization abil
 The main idea is to grow and combine an ensemble of many (potentially shallow) decision trees with some "injected randomness" to reduce bias on unseen data <d-cite key="breiman-2001"></d-cite>. This method significantly reduces the overfitting tendency of individual trees, thereby enhancing the model's predictive performance on new data. Generally, random forests tend to have high predictive accuracy <d-cite key="murphy-2012"></d-cite>.
 
 **Random Forest Training Algorithm**, adapted from <d-cite key="shwartz-2014"></d-cite>, <d-cite key="weinberger-2018"></d-cite>
+
 $$
 \\
 \begin{array}{l}
@@ -258,6 +257,7 @@ $$
 \textbf{Output:} & \text{Classifier } \hat{h}(\mathbf{x}) = \frac{1}{M} \sum_{j=1}^{M} h_j(\mathbf{x})
 \end{array}
 $$
+
 $$
 \begin{array}{l}
 \textbf{Procedure: } \text{Random-Forest(S)} \\
@@ -280,7 +280,6 @@ It is also possible to employ early stopping or pruning for the individual trees
 
 An advantage of the random forest is that it only has two hyperparameters: the number of subsampled datasets $M$ and the number of subsampled features $k$; it is very insensitive to both <d-cite key="weinberger-2018"></d-cite>.
 
-
 ## Extremely Randomized Trees
 
 Extremely randomized trees (Extra-Trees) introduce a high degree of randomization in selecting splits for both attributes and cut points. Unlike conventional methods that seek to find the optimal split based on specific criteria (such as information gain), Extra-Trees selects these splits totally or partially at random. The extreme case is that the structure of the built tree does not correlate at all with the labels of the training set. The benefit of this method is that it is computationally very efficient to implement. <d-cite key="geurts-2006"></d-cite>
@@ -291,13 +290,15 @@ The ensemble model for the Extra-Trees has two parameters: $k$, the number of fe
 
 The corresponding algorithm to build and ExtraTree is defined using that for a given set $S$, $\operatorname{values}_S(i) = \operatorname{values} \\{ \mathbf{x} \in \mathcal{S} \mid \mathbf{x}_i \\}$ is the set of all possible values of the i'th feature in $\mathcal{S}$.
 
-**Extra-Tree Training Algorithm**, *adapted from <d-cite key="geurts-2006"></d-cite>*
+**Extra-Tree Training Algorithm**, _adapted from <d-cite key="geurts-2006"></d-cite>_
+
 $$
 \begin{array}{l}
 \textbf{Input:} &\text{Training set } S \subseteq \mathcal{D} = \{(\mathbf{x}_i, y_i) \mid \mathbf{x}_i \in \mathbb{R}^d, y_i \in \{-1, 1\}\}_{i=1}^n \\
 \textbf{Output:} &\text{Decision tree}
 \end{array}
 $$
+
 $$
 \begin{array}{l}
 \textbf{Procedure: } \text{Extra-Trees}(S) \\
@@ -323,6 +324,7 @@ $$
 \textbf{Output: } & \text{Split } s_i \text{ on feature } i \\
 \end{array}
 $$
+
 $$
 \begin{array}{l}
 \textbf{Procedure: } \text{Pick a Random Split}(S, i) \\
@@ -339,7 +341,7 @@ The main idea behind boosting is to go from a weak classifier to a strong classi
 
 ### Formal Definition
 
-Our goal is to find a function $\hat{F} \in \mathcal{F}$ that best approximates $y$ given $x$. A function $F \in \mathcal{F}$ is of the form for some $M \in \mathbb{N}$: 
+Our goal is to find a function $\hat{F} \in \mathcal{F}$ that best approximates $y$ given $x$. A function $F \in \mathcal{F}$ is of the form for some $M \in \mathbb{N}$:
 
 $$F(x) = \sum_{m=1}^M h_m(x) \gamma_m + c = \sum_{m=0}^M \gamma_m h_m(x)$$
 
@@ -364,7 +366,7 @@ $$
 \end{align}
 $$
 
-In the literature, $r_m$ is generally referred to as the pseudo-residual. For a given parameter $M \in \mathbb{N}$, we will define our approximation $\hat{F}(x) = F_M(x)$. 
+In the literature, $r_m$ is generally referred to as the pseudo-residual. For a given parameter $M \in \mathbb{N}$, we will define our approximation $\hat{F}(x) = F_M(x)$.
 
 ### Connection to Steepest Gradient Descent
 
@@ -387,18 +389,20 @@ $$
 \end{align}
 $$
 
-By the properties of steepest gradient descent, we have 
+By the properties of steepest gradient descent, we have
 
 $$\mathbb{E}_{x, y}\left[\mathcal{L}(y, \hat{F}_m(x))\right] \leq \mathbb{E}_{x, y}\left[\mathcal{L}(y, F_{m-1}(x))\right]$$
 
 However, we do not necessarily have $$\hat{F}_m \in \mathcal{F}$$ given that $F_{m-1} \in \mathcal{F}$.
 
-Equation $$\ref{math_h}$$ defines an approximation in $\mathcal{H}$ of $$- \mathbb{E}_{x, y}\left[\nabla_{F_{m-1}} \mathcal{L}(y, F_{m-1}(x)) \right]$$. Consequently, we can understand gradient boosting as an approximation of the steepest gradient descent method, where we approximate the gradient by some function $h \in \mathcal{H}$. 
+Equation $$\ref{math_h}$$ defines an approximation in $\mathcal{H}$ of $$- \mathbb{E}_{x, y}\left[\nabla_{F_{m-1}} \mathcal{L}(y, F_{m-1}(x)) \right]$$. Consequently, we can understand gradient boosting as an approximation of the steepest gradient descent method, where we approximate the gradient by some function $h \in \mathcal{H}$.
 
 ### Algorithm for a finite Dataset
-Consider a finite dataset $\mathcal{D} = \\{ (x_i, y_i) \mid  i = 1, \dots, n \\} $:
 
-**Gradient Boosting**, *adapted from <d-cite key="gbm_orig"></d-cite>* \\
+Consider a finite dataset $\mathcal{D} = \\{ (x_i, y_i) \mid i = 1, \dots, n \\} $:
+
+**Gradient Boosting**, _adapted from <d-cite key="gbm_orig"></d-cite>_ \\
+
 $$
 \begin{array}{l}
 F_0(x) = \underset{a}{\arg \min } \mathbb{E}_{y}[\mathcal{L}(y, a)] \\
@@ -453,6 +457,7 @@ $$
 The decision tree splits the input space into $J_m$ distinct regions $R_{1,m},\dots,R_{J_m,m}$. Furthermore, $b_{j,m}$ denotes the value predicted in the $R_{j,m}$ region. $$\mathbb{1}_{R_{j,m}}(x)$$ is the indicator value for $x \in R_{j,m}$.
 
 #### Improved Optimization
+
 Another version <d-cite key="gbm_orig"></d-cite> alters equation $$\ref{math_gamma}$$ and $$\ref{math_F}$$ to:
 
 $$
@@ -465,6 +470,7 @@ $$
 In essence, we have a separate error correction for each region. This is guaranteed to not give a worse solution on a single iteration since the solution to the original optimization problem considers the same exact problem but with the constraint of $\gamma_{1,m} = \dots = \gamma_{J_m,m}$.
 
 #### Histogram Gradient Boosting
+
 By the iterative design of gradient boosting, the parallelization of the training process is much harder compared to the random forest. In the case of the random forest, we can naturally build multiple trees in parallel, whereas this is not possible in the case of boosting. This limited the use of the classical gradient boosting algorithm on large datasets since the training process took too long. Histogram Gradient Boosting can be used to increase the speed of building individual trees.
 
 The main bottleneck in building a decision tree is finding the optimal split. This requires us to compute a metric for all features and feature values, which requires $\mathcal{O}(\text{\#features} \times n \log n)$ time since we need to sort all values of all our features.
@@ -496,9 +502,11 @@ The best split is then computed by not considering the feature values but the hi
 XGBoost is an open-source implementation of regularized Gradient Boosting Machines <d-cite key="xgboost"></d-cite>. It has been and is still being used extensively in machine learning competitions, where it is commonly part of the winning solution. However, many people use this model as a black box without properly understanding the underlying principles. While discussing all of the implementation details of XGBoost would go beyond this blog post, this section aims to give a broad overview of the main ideas behind XGBoost <d-cite key="xgboost"></d-cite>.
 
 ### Second Order Gradient Boosting
+
 XGBoost is based on the ideas behind gradient boosting. However, in contrast to the standard algorithm described in the previous section, XGBoost considers Gradients and Hessians.
 
 ### Formal Definition
+
 Similar to gradient boosting, our goal is to find a function $\hat{F} \in \mathcal{F}$ that best approximates $y$ given $x$. A function $F \in \mathcal{F}$ is of the form for some $M \in \mathbb{N}$:
 
 $$
@@ -559,9 +567,10 @@ This is exactly the same optimization problem as in equation $$\ref{math_h_2}$$.
 
 ### Algorithm for a finite Dataset
 
-**Second Order Gradient Boosting**, *Adapted from <d-cite key="xgboost"></d-cite>*
+**Second Order Gradient Boosting**, _Adapted from <d-cite key="xgboost"></d-cite>_
 
 Consider a finite dataset $\mathcal{D} = \\{(x_i, y_i) \mid i = 1, \dots, n\\}$:
+
 $$
 \begin{array}{l}
 F_0(x) = \underset{a}{\arg \min}  \sum_{i=1}^n \mathcal{L}(y_i, a) \\
@@ -603,7 +612,7 @@ Many real-world datasets are sparse, which is generally caused by missing values
     </div>
 </div>
 
-*Figure: Handling Missing Values. Reproduced from <d-cite key="xgboost"></d-cite>*
+_Figure: Handling Missing Values. Reproduced from <d-cite key="xgboost"></d-cite>_
 
 XGBoost adds a default direction for missing values in the decision tree. In order to generate a new split for a feature, only the non-missing values are considered. However, the split is computed for both cases where the missing values either all go to the left or the right direction. The optimal split and the default direction for the missing values are chosen based on the maximum gain. For certain very sparse datasets, this can lead to a 50x improvement in runtime <d-cite key="xgboost"></d-cite> compared to a basic solution such as imputation.
 
@@ -621,6 +630,7 @@ Here are some features of XGBoost with regard to System Design. For more details
 In this section, we present the results of Random Forest, Extra Trees, Gradient Boosting, and XGBoost on real-world data. We use the implementations of `scikit-learn` <d-cite key="scikit-learn"></d-cite> and `xgboost` <d-cite key="xgboost"></d-cite> for our experiments; the corresponding implementation can be found in [Code for Experiment](#code-for-experiment). This section demonstrates the practical ease of use of these algorithms. This often leads to them being used as a black box.
 
 ### California Housing
+
 We use the `California Housing` dataset from `scikit-learn` <d-cite key="scikit-learn"></d-cite>. This dataset consists of only eight numeric features and is a regression task consisting of predicting a house price given these features. We perform 3-fold cross-validation on the dataset and measure runtime & `R2 Score`. Furthermore, we train multiple instances of each classifier, where we modify the maximum number of estimators each method uses. The error bars denote the difference in runtime between different folds.
 
 <div class="row mt-3">
@@ -629,16 +639,16 @@ We use the `California Housing` dataset from `scikit-learn` <d-cite key="scikit-
     </div>
 </div>
 
-*Figure: Runtime and R2 Score with different number of trees. The left figure presents an overview of all evaluated models, whereas the right excludes the Gradient Boosting model to enhance readability.*
+_Figure: Runtime and R2 Score with different number of trees. The left figure presents an overview of all evaluated models, whereas the right excludes the Gradient Boosting model to enhance readability._
 
-As one can clearly see, the runtime of standard gradient boosting is significantly longer compared to the other methods. This can be explained by the fact that the iterative tree building of gradient boosting is hard to parallelize. Since the experiments were run on a machine with 128 cores, this significantly impacts runtime. Another observation that can be made is that the Random Forest and Extra Trees both plateau much earlier than the gradient methods while having the shortest runtime. 
+As one can clearly see, the runtime of standard gradient boosting is significantly longer compared to the other methods. This can be explained by the fact that the iterative tree building of gradient boosting is hard to parallelize. Since the experiments were run on a machine with 128 cores, this significantly impacts runtime. Another observation that can be made is that the Random Forest and Extra Trees both plateau much earlier than the gradient methods while having the shortest runtime.
 
 ## Appendix
 
 ### Code for Experiment
 
 ```python
-# This code has been adapted from: 
+# This code has been adapted from:
 # https://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_hist_grad_boosting_comparison.html
 
 from sklearn.datasets import fetch_california_housing
@@ -662,7 +672,7 @@ from sklearn.model_selection import GridSearchCV, KFold
 
 models = {
     "Extra Trees": ExtraTreesRegressor(
-        random_state=0, n_jobs=N_CORES, #max_depth=8, min_samples_leaf=5, min_samples_split=3, min_weight_fraction_leaf=0.1, 
+        random_state=0, n_jobs=N_CORES, #max_depth=8, min_samples_leaf=5, min_samples_split=3, min_weight_fraction_leaf=0.1,
     ),
     #"Decision Tree" : DecisionTreeRegressor(
     #   random_state=0
@@ -691,32 +701,32 @@ min_weight_fraction_leaf = [0.1, 0.2, 0.3, 0.4, 0.5]
 param_grids = {
     "Extra Trees" : {
         "n_estimators": n_estimators,
-        #'max_depth' : max_depth, 
-        #'min_samples_split' : min_samples_split, 
-        #'min_samples_leaf' : min_samples_leaf, 
+        #'max_depth' : max_depth,
+        #'min_samples_split' : min_samples_split,
+        #'min_samples_leaf' : min_samples_leaf,
         #'min_weight_fraction_leaf' : min_weight_fraction_leaf
     },
     "XGBoost": {
         "n_estimators": n_estimators,
-        #'max_depth' : max_depth, 
-        #'learning_rate' : learning_rate, 
-        #'min_samples_split' : min_samples_split, 
-        #'min_samples_leaf' : min_samples_leaf, 
+        #'max_depth' : max_depth,
+        #'learning_rate' : learning_rate,
+        #'min_samples_split' : min_samples_split,
+        #'min_samples_leaf' : min_samples_leaf,
         #'min_weight_fraction_leaf' : min_weight_fraction_leaf
     },
     "Gradient Boosting": {
-        "n_estimators": n_estimators, 
-        #'max_depth' : max_depth, 
-        #'learning_rate' : learning_rate, 
-        #'min_samples_split' : min_samples_split, 
-        #'min_samples_leaf' : min_samples_leaf, 
+        "n_estimators": n_estimators,
+        #'max_depth' : max_depth,
+        #'learning_rate' : learning_rate,
+        #'min_samples_split' : min_samples_split,
+        #'min_samples_leaf' : min_samples_leaf,
         #'min_weight_fraction_leaf' : min_weight_fraction_leaf
     },
     "Random Forest": {
         "n_estimators": n_estimators,
-        #'max_depth' : max_depth, 
-        #'min_samples_split' : min_samples_split, 
-        #'min_samples_leaf' : min_samples_leaf, 
+        #'max_depth' : max_depth,
+        #'min_samples_split' : min_samples_split,
+        #'min_samples_leaf' : min_samples_leaf,
         #'min_weight_fraction_leaf' : min_weight_fraction_leaf
     },
     "Hist Gradient Boosting": {
@@ -821,7 +831,7 @@ for idx, result in enumerate(results):
     cv_results = result["cv_results"].round(3)
     model_name = result["model"]
     if model_name == 'Gradient Boosting': continue
-        
+
     param_name = list(param_grids[model_name].keys())[0]
     cv_results[param_name] = cv_results["param_" + param_name]
     cv_results["model"] = model_name

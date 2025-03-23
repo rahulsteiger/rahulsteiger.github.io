@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Biased Coin
-description: This blog post presents a nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me. 
+description: This blog post presents a nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me.
 
 tags: coin-tosses probability quantitative-trading
 giscus_comments: false
@@ -24,8 +24,7 @@ authors:
     affiliations:
       name: ETH Zurich
 
-
-bibliography: 
+bibliography:
 
 # Optionally, you can add a table of contents to your post.
 # NOTES:
@@ -63,10 +62,12 @@ _styles: >
 ---
 
 ## Problem Statement
+
 Suppose $p$ is uniform between $[0, 1]$ and you throw a coin $N$ times with bias $p$. You have to guess at each toss what the face will be. If your guess correctly, you get $1$ dollar, otherwise $-1$ dollar. What is the optimal strategy and the expected payoff in that case?
 
 ## Strategy
-Since $p$ is uniform on $[0, 1]$, it does not matter what we guess for the first flip. After a certain number of throws, our best estimate for $p$ is the number of heads divided by the current number of throws. Since we want to maximize the number of correct guess, we predict heads if we have seen more heads and tails if we saw more tails in the previous throws. If we saw an equal number of heads and tails, we just predict randomly. 
+
+Since $p$ is uniform on $[0, 1]$, it does not matter what we guess for the first flip. After a certain number of throws, our best estimate for $p$ is the number of heads divided by the current number of throws. Since we want to maximize the number of correct guess, we predict heads if we have seen more heads and tails if we saw more tails in the previous throws. If we saw an equal number of heads and tails, we just predict randomly.
 
 ## A useful property
 
@@ -85,6 +86,7 @@ $$E[Y_1 + \ldots + Y_n = k] = \int_0^1 {n \choose k} x^k (1 - x)^{n - k} \, dx =
 **Note:** The event $Y_1 + \ldots + Y_n = k$ is equivalent to saying that if $X_0, \ldots, X_n$ are ordered, then $X_0$ has position $k+1$. This happens with probability $\frac{1}{n + 1}$.
 
 ## Expected Payoff
+
 Let $X_n$ denote the payoff after the $n$'th toss, and $H$ denote the number of heads we saw until now. If we have $\frac{H}{n} = 0.5$, we will randomly guess, meaning that our overall expected payoff will be $0$. We have that:
 
 $$\mathbb{E}[X_n | p] = \mathbb{E}\left[X_n \bigg | \frac{H}{n} < 0.5, p\right] P\left[\frac{H}{n} < 0.5 | p\right] + \mathbb{E}\left[X_n \bigg | \frac{H}{n} > 0.5, p\right] P\left[\frac{H}{n} > 0.5 | p \right]$$
@@ -95,7 +97,7 @@ $$\mathbb{E}\left[X_n \bigg | \frac{H}{n} < 0.5, p\right] = (1 - p) \cdot 1 + p 
 
 Since we have that $$P\left[\frac{H}{n} < 0.5 \left . \right \vert  p\right] = \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} {n \choose k} p^k (1-p)^{n - k}$$, we get that
 
-$$ 
+$$
 \begin{align*}
    \int_0^{1} 2p \cdot P\left[\frac{H}{n} < 0.5 | p \right] \cdot 1 dp
     &= 2 \int_0^{1} \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} {n \choose k} p \cdot (1-p)^k p^{n - k} dp \\
@@ -106,7 +108,7 @@ $$
 \end{align*}
 $$
 
-Furthermore, 
+Furthermore,
 
 $$
 \begin{align*}
@@ -118,11 +120,11 @@ $$
 \end{align*}
 $$
 
-Consequently, 
+Consequently,
 
 $$
 \begin{align*}
-    \int_0^1 E\left[Y \bigg | \frac{H}{n} < 0.5, p\right] P\left[\frac{H}{n} < 0.5 | p\right] \cdot 1 dp 
+    \int_0^1 E\left[Y \bigg | \frac{H}{n} < 0.5, p\right] P\left[\frac{H}{n} < 0.5 | p\right] \cdot 1 dp
     &= \frac{\lfloor \frac{n}{2} \rfloor + 1}{(n + 1)} - \frac{(\lfloor \frac{n}{2} \rfloor + 1) (\lfloor \frac{n}{2} \rfloor + 2)}{(n + 1) (n + 2)} \\
     &= \frac{(\lfloor \frac{n}{2} \rfloor+1) (n - \lfloor \frac{n}{2} \rfloor)}{(n+1)(n+2)}\\
     &= \frac{(\lfloor \frac{n}{2} \rfloor+1) (\lceil \frac{n}{2} \rceil)}{(n+1)(n+2)}
@@ -139,7 +141,7 @@ Finally, we have that
 
 $$
 \begin{align*}
-    E[X] 
+    E[X]
     &= \sum_{n=0}^{N-1} E[X_n] \\
     &= \sum_{n=1}^{N-1} 2 \frac{(\lfloor \frac{n}{2} \rfloor+1) (\lceil \frac{n}{2} \rceil)}{(n+1)(n+2)} \\
     &= 2 \sum_{n=1, n \text{ odd}}^{N-1} \frac{(n + 1)^2/2^2}{(n+1)(n+2)} + 2 \sum_{n=1, n \text{ even}}^{N-1} \frac{\frac{n + 2}{2} \frac{n}{2}}{(n+1)(n+2)} \\
@@ -150,11 +152,12 @@ $$
 \end{align*}
 $$
 
-For $N = 100$, we get that $E[X] \approx 47.55727465647559$. 
+For $N = 100$, we get that $E[X] \approx 47.55727465647559$.
 
-**Note:** I do not believe that it would have been feasible to come up with the closed-form solution during an actual interview. 
+**Note:** I do not believe that it would have been feasible to come up with the closed-form solution during an actual interview.
 
 ### A Valuable Life Lesson
-For the record, I did not receive this question during an interview; rather, I obtained it from a group chat. After coming up with what I believe is an elegant solution, I shared it with a couple of acquaintances. One of those people actually encountered this question in their interview but did not inform the interviewer. While they were unable to come up with this solution during the interview, that person sent an email to the firm submitting my solution as their own work without my permission or giving me credit. This action most likely allowed them to skip an interview stage and propelled them to the final round. It took a lot of willpower not to report that person for plagiarism. However, let me just say that I was not particularly surprised or disappointed when that person did not receive an offer. 
 
-Happy Ending? ¯\\\_(ツ)_/¯
+For the record, I did not receive this question during an interview; rather, I obtained it from a group chat. After coming up with what I believe is an elegant solution, I shared it with a couple of acquaintances. One of those people actually encountered this question in their interview but did not inform the interviewer. While they were unable to come up with this solution during the interview, that person sent an email to the firm submitting my solution as their own work without my permission or giving me credit. This action most likely allowed them to skip an interview stage and propelled them to the final round. It took a lot of willpower not to report that person for plagiarism. However, let me just say that I was not particularly surprised or disappointed when that person did not receive an offer.
+
+Happy Ending? ¯\\\_(ツ)\_/¯
