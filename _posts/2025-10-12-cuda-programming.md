@@ -408,5 +408,4 @@ void CUDART_CB MyCallback(cudaStream_t stream, cudaError_t status, void *userDat
     printf("GPU operation completed\n");
     // Trigger next batch of work
 }
-
 ```
