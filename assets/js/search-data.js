@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-running-deepseek-r1-locally",
+        },{id: "post-cuda-programming-part-1-fundamentals",
+      
+        title: "CUDA Programming Part 1 (Fundamentals)",
+      
+      description: "This blog contains the notes of me (properly) learning how to use CUDA.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/blog/2025/cuda-programming/";
+        
+      },
+    },{id: "post-running-deepseek-r1-locally",
       
         title: "Running DeepSeek R1 locally",
       
