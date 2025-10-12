@@ -5,7 +5,7 @@ description: This blog contains the notes of me (properly) learning how to use C
 
 tags: CUDA GH200 C++
 giscus_comments: false
-date: 2025-02-10
+date: 2025-10-12
 featured: false
 mermaid:
   enabled: true
