@@ -23,9 +23,9 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-cuda-programming-part-1-fundamentals",
+        },{id: "post-cuda-programming-fundamentals",
       
-        title: "CUDA Programming Part 1 (Fundamentals)",
+        title: "CUDA Programming (Fundamentals)",
       
       description: "This blog contains the notes of me (properly) learning how to use CUDA.",
       section: "Posts",
