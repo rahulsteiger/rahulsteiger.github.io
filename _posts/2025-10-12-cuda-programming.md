@@ -409,3 +409,111 @@ void CUDART_CB MyCallback(cudaStream_t stream, cudaError_t status, void *userDat
     // Trigger next batch of work
 }
 ```
+
+## CUDA API
+
+NVIDIA provides libraries with highly optimized CUDA kernels for GPU computing.
+
+### cuBLAS
+
+cuBLAS is NVIDIA's industry-standard library for BLAS and GEMM routines, highly optimized for GPU performance. It supports operation fusion for greater efficiency.
+
+```c++
+__half alpha_h = __float2half(1.0f), beta_h = __float2half(0.0f);
+// Performs half-precision matrix multiplication: d_C_h = alpha_h * d_A_h * d_B_h + beta_h * d_C_h
+cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha_h, d_B_h, N, d_A_h, K, &beta_h, d_C_h, N);
+```
+
+**Parameter breakdown:**
+
+- `handle`: cuBLAS library context
+- `CUBLAS_OP_N`: No transpose for input matrices
+- `N, M, K`: Matrix dimensions (output: N x M, input: N x K and K x M)
+- `&alpha_h`: Scalar multiplier for the product
+- `d_B_h`: Device pointer to matrix B
+- `N`: Leading dimension of matrix B
+- `d_A_h`: Device pointer to matrix A
+- `K`: Leading dimension of matrix A
+- `&beta_h`: Scalar multiplier for matrix C
+- `d_C_h`: Device pointer to output matrix C
+- `N`: Leading dimension of matrix C
+
+#### cuBLASLt
+
+Extension for more flexible APIs, mainly for deep learning workloads. Optimized for Tensor Cores, allows for more fine-grained control. Generally, is faster than cuBLAS.
+
+cuBLASLt provides a more flexible and high-performance matrix multiplication API, especially suited for deep learning and Tensor Core acceleration. It allows fine-grained control over operation parameters and memory layouts.
+
+```c++
+cublasLtHandle_t handle;
+cublasLtCreate(&handle);
+
+cublasLtMatmulDesc_t matmulDesc_fp32;
+cublasLtMatmulDescCreate(&matmulDesc_fp32, CUBLAS_COMPUTE_32F, CUDA_R_32F);
+
+// Create matrix layouts for fp32 (float) data
+cublasLtMatrixLayout_t matA_fp32, matB_fp32, matC_fp32;
+cublasLtMatrixLayoutCreate(&matA_fp32, CUDA_R_32F, K, M, K); // A: M x K
+cublasLtMatrixLayoutCreate(&matB_fp32, CUDA_R_32F, N, K, N); // B: K x N
+cublasLtMatrixLayoutCreate(&matC_fp32, CUDA_R_32F, N, M, N); // C: M x N
+
+cublasLtMatmul(handle, matmulDesc_fp32, &alpha_h, d_B_fp32, matB_fp32, d_A_fp32, matA_fp32, &beta_h, d_C_fp32, matC_fp32, d_C_fp32, matC_fp32, nullptr, nullptr, 0, 0);
+```
+
+This example demonstrates cuBLASLt performing matrix multiplication in single precision (fp32). The matrix layouts, descriptors, and device pointers all use float (fp32) types for consistency.
+
+**Parameter breakdown:**
+
+- `handle`: cuBLASLt library context
+- `matmulDesc_fp32`: Matmul operation descriptor (algorithm, compute type, etc.)
+- `&alpha_h`: Scalar multiplier for the product
+- `d_B_fp32`: Device pointer to matrix B (float)
+- `matB_fp32`: Layout descriptor for matrix B (fp32)
+- `d_A_fp32`: Device pointer to matrix A (float)
+- `matA_fp32`: Layout descriptor for matrix A (fp32)
+- `&beta_h`: Scalar multiplier for matrix C
+- `d_C_fp32`: Device pointer to output matrix C (float)
+- `matC_fp32`: Layout descriptor for matrix C (fp32)
+- `d_C_fp32`, `matC_fp32`: Workspace/output buffer and its layout (can be same as above)
+- `nullptr, nullptr`: Optional algorithm and workspace pointers (not used here)
+- `0, 0`: Size parameters for workspace (set to zero if not used)
+
+#### cuBLASXt
+
+Multi-GPU BLAS support. Thread-safe. Host+GPU solving is slower due to memory bottlenecks, but the GH200 chip's fast interconnect may help.
+
+The following example demonstrates how to use cuBLASXt to perform single-precision matrix multiplication (SGEMM) across multiple GPUs. cuBLASXt allows you to select devices and operate directly on host memory, automatically managing data transfers and computation distribution.
+
+```c++
+cublasXtHandle_t handle;
+CHECK_CUBLAS(cublasXtCreate(&handle));
+
+int devices[1] = {0};
+cublasXtDeviceSelect(handle, 1, devices); // Select GPU 0 for computation
+
+cublasXtSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha, B_host, N, A_host, K, &beta, C_host_gpu, N);
+```
+
+**Parameter breakdown:**
+
+- `handle`: cuBLASXt library context
+- `CUBLAS_OP_N`: No transpose for input matrices
+- `N, M, K`: Matrix dimensions (output: N x M, input: N x K and K x M)
+- `&alpha`: Scalar multiplier for the product
+- `B_host`: Pointer to matrix B in host memory
+- `N`: Leading dimension of matrix B
+- `A_host`: Pointer to matrix A in host memory
+- `K`: Leading dimension of matrix A
+- `&beta`: Scalar multiplier for matrix C
+- `C_host_gpu`: Pointer to output matrix C (host memory, result may be computed on GPU)
+- `N`: Leading dimension of matrix C
+
+#### cuBLASDx
+
+Device-side BLAS API (preview) for fusing operations inside CUDA kernels, reducing latency and improving performance.
+
+#### CUTLASS
+
+cuBLAS and variants run on the host, and cuBLASDx is not yet fully optimized or documented. Matrix multiplication is key for deep learning, but cuBLAS is limited in fusing custom operations. CUTLASS is a template library for flexible, efficient fusion of linear algebra operations, ideal for deep learning and custom GPU workloads.
+
+### cuDNN
