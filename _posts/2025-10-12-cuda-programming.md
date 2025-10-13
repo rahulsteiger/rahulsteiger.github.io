@@ -38,7 +38,8 @@ toc:
     # subsections:
     #   - name: Example Child Subsection 1
     #   - name: Example Child Subsection 2
-  - name: Writing your First Kernels
+  - name: The CUDA basics
+  - name: CUDA API
 
 # Below is an example of injecting additional post-specific styles.
 # If you use this post as a template, delete this _styles block.
@@ -255,13 +256,13 @@ One can launch a kernel with
 - `gridDim` defines the size of the block grid
 - `blockDim` defines the size of each block
 - `Ns` specifies the number of bytes in shared memory that are dynamically allocated per block (usually omitted)
-- `S`specifies the associated CUDA Stream (see definition later)
+- `S` specifies the associated CUDA Stream (see definition later)
 
 ### Thread Synchronization
 
 By default, the CPU and GPU execute independently. To ensure the CPU waits for all GPU work to finish (e.g., after launching a kernel), call `cudaDeviceSynchronize()`. This blocks the CPU until all preceding GPU tasks are complete.
 
-In many cases, this is overkill since you might want to do some more finegrained synchronization. This can be done as follows:
+In many cases, this is overkill since you might want to do some more fine-grained synchronization. This can be done as follows:
 
 - Synchronize all threads in a block: `__syncthreads()`.
 - Synchronize all threads in a warp: `__syncwarps()`.
@@ -517,3 +518,30 @@ Device-side BLAS API (preview) for fusing operations inside CUDA kernels, reduci
 cuBLAS and variants run on the host, and cuBLASDx is not yet fully optimized or documented. Matrix multiplication is key for deep learning, but cuBLAS is limited in fusing custom operations. CUTLASS is a template library for flexible, efficient fusion of linear algebra operations, ideal for deep learning and custom GPU workloads.
 
 ### cuDNN
+
+NVIDIA cuDNN is a GPU-accelerated library providing highly optimized implementations of core deep learning operations, including matrix multiplication (GEMM), pooling, softmax, activation functions, tensor transformations, batch normalization, and more.
+
+The following example demonstrates applying a tanh activation function to a 4D tensor using cuDNN:
+
+```c++
+cudnnHandle_t cudnn;
+cudnnCreate(&cudnn);
+
+// Define input tensor: batch_size x channels x height x width
+cudnnTensorDescriptor_t input_descriptor;
+cudnnCreateTensorDescriptor(&input_descriptor);
+cudnnSetTensor4dDescriptor(input_descriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 
+                           batch_size, channels, height, width);
+
+// Configure tanh activation
+cudnnActivationDescriptor_t activation_descriptor;
+cudnnCreateActivationDescriptor(&activation_descriptor);
+cudnnSetActivationDescriptor(activation_descriptor, CUDNN_ACTIVATION_TANH, 
+                             CUDNN_PROPAGATE_NAN, 0.0);
+
+// Apply activation: output = alpha * tanh(input) + beta * output
+cudnnActivationForward(cudnn, activation_descriptor, &alpha, input_descriptor, d_input, 
+                       &beta, input_descriptor, d_output_cudnn);
+```
+
+cuDNN also supports advanced fusion patterns, combining multiple operations for greater efficiency. Instead of individual API calls, you can express computation as a graph, which cuDNN optimizes for maximum performance on your hardware.
