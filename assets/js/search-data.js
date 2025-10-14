@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-cuda-programming-fundamentals",
+        },{id: "post-cuda-programming-optimizing-gemm",
+      
+        title: "CUDA Programming (Optimizing GEMM)",
+      
+      description: "This blog contains the notes of me (attempting) to create a fast GEMM CUDA implementation.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/blog/2025/cuda-programming_gemm/";
+        
+      },
+    },{id: "post-cuda-programming-fundamentals",
       
         title: "CUDA Programming (Fundamentals)",
       
