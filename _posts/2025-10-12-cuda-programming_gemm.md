@@ -41,6 +41,7 @@ toc:
   - name: Baseline implementation
   - name: Global Memory Coalescing
   - name: Shared Memory Cache-Blocking
+  - name: 1D Blocktiling
 
 # Below is an example of injecting additional post-specific styles.
 # If you use this post as a template, delete this _styles block.
@@ -65,7 +66,7 @@ These are my notes for Chapter 7 of the CUDA Programming Course – High-Perform
 
 This part of the course covers building a fast CUDA SGEMM from scratch. The approach is based on this [blog](https://siboehm.com/articles/22/CUDA-MMM) post, and the associated code can be found on [GitHub](https://github.com/siboehm/SGEMM_CUDA?tab=readme-ov-file). The original blog is very well written and features excellent figures, so I recommend checking it out before/ while reading my notes. 
 
-Since I am working with the GH200, I can do some Hopper specific optimizations that are not mentioned in the course or original blog post. 
+Since I am working with the GH200, I can do some Hopper specific optimizations that are not mentioned in the course or original blog post. But that is an ambitious goal. 
 
 This is still a work in progress.
 
@@ -193,3 +194,46 @@ __global__ void sgemm_shared_mem_block(int M, int N, int K, float alpha,
 
 For $m=n=k=4096$, this kernel achieves 9174.1 GFLOPs, a 1.5x improvement over the previous version, but still more than 5x slower than the cuBLAS implementation.
 
+## 1D Blocktiling
+
+Instead of computing a single entry per thread, the next optimization computes multiple entries of C per thread. This has the advantage that our arithmetic intensity ratio (arithmetic operations vs memory operations) is higher, since the result of a single load can be used to compute multiple entries. The main change occurs in the computation loop: 
+
+```c++
+// allocate thread-local cache for results in registerfile
+float threadResults[TM] = {0.0};
+
+// outer loop over block tiles
+for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
+  // populate the SMEM caches
+  As[innerRowA * BK + innerColA] = A[innerRowA * K + innerColA];
+  Bs[innerRowB * BN + innerColB] = B[innerRowB * N + innerColB];
+  __syncthreads();
+
+  // advance blocktile
+  A += BK;
+  B += BK * N;
+
+  // calculate per-thread results
+  for (uint dotIdx = 0; dotIdx < BK; ++dotIdx) {
+    // we make the dot product loop the outer loop, which facilitates
+    // reuse of the Bs entry, which we can cache in a temporary variable
+    float tmpB = Bs[dotIdx * BN + threadCol];
+    for (uint resIdx = 0; resIdx < TM; ++resIdx) {
+      threadResults[resIdx] +=
+          As[(threadRow * TM + resIdx) * BK + dotIdx] * tmpB;
+    }
+  }
+  __syncthreads();
+}
+
+// write out the results
+for (uint resIdx = 0; resIdx < TM; ++resIdx) {
+  C[(threadRow * TM + resIdx) * N + threadCol] =
+      alpha * threadResults[resIdx] +
+      beta * C[(threadRow * TM + resIdx) * N + threadCol];
+}
+```
+
+For $m=n=k=4096$ and `TM`$=8$, this kernel achieves 17040.9 GFLOPs, a 1.85x improvement over the previous version, but still nearly 3x slower than the cuBLAS implementation.
+
+TODO. 
