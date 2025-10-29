@@ -196,10 +196,15 @@ For $m=n=k=4096$, this kernel achieves 9174.1 GFLOPs, a 1.5x improvement over th
 
 ## 1D Blocktiling
 
-Instead of computing a single entry per thread, the next optimization computes multiple entries of C per thread. This has the advantage that our arithmetic intensity ratio (arithmetic operations vs memory operations) is higher, since the result of a single load can be used to compute multiple entries. The main change occurs in the computation loop: 
+Instead of computing a single entry per thread, we now compute multiple entries of C per thread. This increases arithmetic intensity since a single load can be reused to compute multiple results.
+
+We introduce new parameters: BM and BN specify the block dimensions (rows and columns of C per block), BK controls the shared memory tile size (i.e. how much shared memory we can load in 1 iteration given the number of threads available to us), and TM defines how many results each thread computes. 
 
 ```c++
 // allocate thread-local cache for results in registerfile
+
+__shared__ float As[BM * BK];
+__shared__ float Bs[BK * BN];
 float threadResults[TM] = {0.0};
 
 // outer loop over block tiles
@@ -234,6 +239,76 @@ for (uint resIdx = 0; resIdx < TM; ++resIdx) {
 }
 ```
 
+The computation loop makes the dot product the outer loop, allowing us to cache entries from B in a temporary variable and reuse them across multiple accumulations. 
+
 For $m=n=k=4096$ and `TM`$=8$, this kernel achieves 17040.9 GFLOPs, a 1.85x improvement over the previous version, but still nearly 3x slower than the cuBLAS implementation.
+
+## 2D Blocktiling
+
+Instead of computing a single `TM` row of `C`, we compute a `TM` $\times$ `TN` block of `C` per thread. This further increases the arithmetic intensity. Since each thread now computes more results, it must load multiple items from both A and B.
+
+```c++
+// Each block computes BM * BN entries of C
+const uint totalResultsBlocktile = BM * BN;
+
+// Each thread computes TM * TN entries of C -> divide by that to get the number of threads per tile
+const uint numThreadsBlocktile = totalResultsBlocktile / (TM * TN);
+
+// strideA and strideB basically represent how many entries of A and B all threads can load in 1 iteration
+const uint strideA = numThreadsBlocktile / BK;
+const uint strideB = numThreadsBlocktile / BN;
+
+// outer-most loop over block tiles
+for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
+  // populate the SMEM caches
+  for (uint loadOffset = 0; loadOffset < BM; loadOffset += strideA) {
+    As[(innerRowA + loadOffset) * BK + innerColA] =
+        A[(innerRowA + loadOffset) * K + innerColA];
+  }
+  for (uint loadOffset = 0; loadOffset < BK; loadOffset += strideB) {
+    Bs[(innerRowB + loadOffset) * BN + innerColB] =
+        B[(innerRowB + loadOffset) * N + innerColB];
+  }
+  __syncthreads();
+  ...
+}
+```
+
+To compute the `TM` $\times$ `TN` block, each thread repeatedly accesses the same entries of A and B from shared memory. To reduce these expensive shared memory accesses, we cache the entries in local registers. 
+
+```c++
+// register caches for As and Bs
+float regM[TM] = {0.0};
+float regN[TN] = {0.0};
+float threadResults[TM * TN] = {0.0};
+
+// outer-most loop over block tiles
+for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
+  // Load Memory from before
+  ...
+  // advance blocktile
+    A += BK;     // move BK columns to right
+    B += BK * N; // move BK rows down
+
+    // calculate per-thread results
+    for (uint dotIdx = 0; dotIdx < BK; ++dotIdx) {
+      // block into registers
+      for (uint i = 0; i < TM; ++i) {
+        regM[i] = As[(threadRow * TM + i) * BK + dotIdx];
+      }
+      for (uint i = 0; i < TN; ++i) {
+        regN[i] = Bs[dotIdx * BN + threadCol * TN + i];
+      }
+      for (uint resIdxM = 0; resIdxM < TM; ++resIdxM) {
+        for (uint resIdxN = 0; resIdxN < TN; ++resIdxN) {
+          threadResults[resIdxM * TN + resIdxN] +=
+              regM[resIdxM] * regN[resIdxN];
+        }
+      }
+    }
+    __syncthreads();
+}
+```c++
+
 
 TODO. 
