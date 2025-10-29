@@ -42,6 +42,8 @@ toc:
   - name: Global Memory Coalescing
   - name: Shared Memory Cache-Blocking
   - name: 1D Blocktiling
+  - name: 2D Blocktiling
+  - name: Vectorization
 
 # Below is an example of injecting additional post-specific styles.
 # If you use this post as a template, delete this _styles block.
@@ -241,7 +243,7 @@ for (uint resIdx = 0; resIdx < TM; ++resIdx) {
 
 The computation loop makes the dot product the outer loop, allowing us to cache entries from B in a temporary variable and reuse them across multiple accumulations. 
 
-For $m=n=k=4096$ and `TM`$=8$, this kernel achieves 17040.9 GFLOPs, a 1.85x improvement over the previous version, but still nearly 3x slower than the cuBLAS implementation.
+For $m=n=k=4096$, this kernel achieves 17040.9 GFLOPs, a 1.85x improvement over the previous version, but still nearly 3x slower than the cuBLAS implementation.
 
 ## 2D Blocktiling
 
@@ -308,7 +310,51 @@ for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
     }
     __syncthreads();
 }
-```c++
+```
 
+For $m=n=k=4096$, this kernel achieves 25933.0 GFLOPs. We are halfway to achieving the performance of the cuBLAS implementation.
+
+
+## Vectorization
+
+We replace scalar loads and stores from global memory with vectorized operations using `float4`. This allows the GPU to issue fewer memory transactions by loading/storing 4 floats per instruction instead of 1.
+
+For the tile loading phase, each thread now loads 4 consecutive elements at once:
+
+```c++
+// Update population of memory caches
+float4 tmp =
+    reinterpret_cast<float4 *>(&A[innerRowA * K + innerColA * 4])[0];
+As[(innerColA * 4 + 0) * BM + innerRowA] = tmp.x;
+As[(innerColA * 4 + 1) * BM + innerRowA] = tmp.y;
+As[(innerColA * 4 + 2) * BM + innerRowA] = tmp.z;
+As[(innerColA * 4 + 3) * BM + innerRowA] = tmp.w;
+
+reinterpret_cast<float4 *>(&Bs[innerRowB * BN + innerColB * 4])[0] =
+    reinterpret_cast<float4 *>(&B[innerRowB * N + innerColB * 4])[0];
+```
+
+We apply the same vectorization when writing results back to C:
+
+```c++
+for (uint resIdxM = 0; resIdxM < TM; resIdxM += 1) {
+  for (uint resIdxN = 0; resIdxN < TN; resIdxN += 4) {
+    // load C vector into registers
+    float4 tmp = reinterpret_cast<float4 *>(
+        &C[(threadRow * TM + resIdxM) * N + threadCol * TN + resIdxN])[0];
+    // perform GEMM update in reg
+    tmp.x = alpha * threadResults[resIdxM * TN + resIdxN] + beta * tmp.x;
+    tmp.y = alpha * threadResults[resIdxM * TN + resIdxN + 1] + beta * tmp.y;
+    tmp.z = alpha * threadResults[resIdxM * TN + resIdxN + 2] + beta * tmp.z;
+    tmp.w = alpha * threadResults[resIdxM * TN + resIdxN + 3] + beta * tmp.w;
+    // write back
+    reinterpret_cast<float4 *>(
+        &C[(threadRow * TM + resIdxM) * N + threadCol * TN + resIdxN])[0] =
+        tmp;
+  }
+}
+```
+
+For $m=n=k=4096$, this kernel achieves 31420.8 GFLOPs. We are getting closer...
 
 TODO. 
