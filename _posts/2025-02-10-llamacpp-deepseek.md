@@ -141,8 +141,6 @@ Parameter explanation:
 - `--flash-attn`: Use [FlashAttention](https://github.com/Dao-AILab/flash-attention).
 - `--ctx-size 16384`: Number of tokens the model can process in a single context window.
 
-**Note:** Further information can be found [here](https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md).
-
 We can test the model with the following command:
 
 ```bash
