@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-cuda-programming-optimizing-gemm",
+        },{id: "post-an-evaluation-of-deepspeed-zero-compilation-and-offloading",
+      
+        title: "An Evaluation of DeepSpeed ZeRO, Compilation, and Offloading",
+      
+      description: "This blog contains the final project of the course Large-Scale AI Engineering.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/blog/2025/lsaie-project/";
+        
+      },
+    },{id: "post-cuda-programming-optimizing-gemm",
       
         title: "CUDA Programming (Optimizing GEMM)",
       
