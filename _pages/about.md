@@ -18,7 +18,9 @@ selected_papers: False # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 ---
 
-I am a Master's student in Data Science at ETH Zurich, with a strong interest in the intersection of High-Performance Computing and Machine Learning. Currently, I am working as an Applied Research Intern at Thomson Reuters Labs in Zug, where I am currently collaborating with a team of research engineers to develop an internal tool that streamlines hosting open-source LLMs for researchers.
+I am a Master's student in Data Science at ETH Zurich, with a strong interest in the intersection of High-Performance Computing and Machine Learning. Currently, I am completing my Master's thesis at the [Efficient Architectures and Systems Lab](https://systems.ethz.ch/research/easl.html) under the supervision of Prof. Ana Klimovic, where I am working on optimizing large-scale LLM serving on the Alps supercomputer using NVIDIA GH200 Grace Hopper architecture. This work has already led to open-source contributions to vLLM, including a 50× speedup for multimodal image cache lookups.
+
+Previously, I worked as an Applied Research Intern at Thomson Reuters Labs in Zug, where I collaborated with a team of research engineers to develop an internal tool that streamlines hosting open-source LLMs for researchers.
 
 In 2024, I participated in a five-month exchange program at the National University of Singapore and completed a four-month research internship at the Okinawa Institute of Science and Technology under the mentorship of Prof. Makoto Yamada.
 
