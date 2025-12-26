@@ -128,6 +128,7 @@ Consequently, each thread in a warp accesses a different row of A, the same colu
 Since the matrices are stored in row-major order, we can take advantage of 128B loading for matrix A. However, since we access non-contiguous memory in matrices B and C, we cannot exploit this optimization. The solution is to redefine `x` and `y` to ensure that warps access data that can be coalesced.
 
 We can achieve this as follows:
+
 ```
 const int x = blockIdx.x * BLOCKSIZE + (threadIdx.x / BLOCKSIZE);
 const int y = blockIdx.y * BLOCKSIZE + (threadIdx.x % BLOCKSIZE);
@@ -136,7 +137,6 @@ const int y = blockIdx.y * BLOCKSIZE + (threadIdx.x % BLOCKSIZE);
 This ensures that each thread within a warp accesses a consecutive set of 32 columns of B and the same consecutive entries of C. Consequently, we reduce the number of load transactions each warp needs to perform while keeping the total number of warps unchanged.
 
 For $m=n=k=4096$, this kernel achieves 6352.2 GFLOPs, a nearly 12x improvement, but still 8x slower than the cuBlas implementation.
-
 
 ## Shared Memory Cache-Blocking
 
@@ -314,7 +314,6 @@ for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
 
 For $m=n=k=4096$, this kernel achieves 25933.0 GFLOPs. We are halfway to achieving the performance of the cuBLAS implementation.
 
-
 ## Vectorization
 
 We replace scalar loads and stores from global memory with vectorized operations using `float4`. This allows the GPU to issue fewer memory transactions by loading/storing 4 floats per instruction instead of 1.
@@ -399,7 +398,5 @@ for (uint dotIdx = 0; dotIdx < BK; ++dotIdx) {
 ```
 
 This kernel achieves 41496 GFLOPs, we achieved nearly $84$% of cuBLAS.
-
-
 
 TODO.
