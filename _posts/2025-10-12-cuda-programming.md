@@ -530,17 +530,17 @@ cudnnCreate(&cudnn);
 // Define input tensor: batch_size x channels x height x width
 cudnnTensorDescriptor_t input_descriptor;
 cudnnCreateTensorDescriptor(&input_descriptor);
-cudnnSetTensor4dDescriptor(input_descriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, 
+cudnnSetTensor4dDescriptor(input_descriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT,
                            batch_size, channels, height, width);
 
 // Configure tanh activation
 cudnnActivationDescriptor_t activation_descriptor;
 cudnnCreateActivationDescriptor(&activation_descriptor);
-cudnnSetActivationDescriptor(activation_descriptor, CUDNN_ACTIVATION_TANH, 
+cudnnSetActivationDescriptor(activation_descriptor, CUDNN_ACTIVATION_TANH,
                              CUDNN_PROPAGATE_NAN, 0.0);
 
 // Apply activation: output = alpha * tanh(input) + beta * output
-cudnnActivationForward(cudnn, activation_descriptor, &alpha, input_descriptor, d_input, 
+cudnnActivationForward(cudnn, activation_descriptor, &alpha, input_descriptor, d_input,
                        &beta, input_descriptor, d_output_cudnn);
 ```
 

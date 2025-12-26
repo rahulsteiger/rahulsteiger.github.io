@@ -66,9 +66,9 @@ _styles: >
 
 These are my notes for Chapter 7 of the CUDA Programming Course – High-Performance Computing with GPUs on [YouTube](https://www.youtube.com/watch?v=86FAWCzIe_4&t). For all experiments, I will be working on the ALPS cluster, which features a GH200 System.
 
-This part of the course covers building a fast CUDA SGEMM from scratch. The approach is based on this [blog](https://siboehm.com/articles/22/CUDA-MMM) post, and the associated code can be found on [GitHub](https://github.com/siboehm/SGEMM_CUDA?tab=readme-ov-file). The original blog is very well written and features excellent figures, so I recommend checking it out before/ while reading my notes. 
+This part of the course covers building a fast CUDA SGEMM from scratch. The approach is based on this [blog](https://siboehm.com/articles/22/CUDA-MMM) post, and the associated code can be found on [GitHub](https://github.com/siboehm/SGEMM_CUDA?tab=readme-ov-file). The original blog is very well written and features excellent figures, so I recommend checking it out before/ while reading my notes.
 
-Since I am working with the GH200, I can do some Hopper specific optimizations that are not mentioned in the course or original blog post. But that is an ambitious goal. 
+Since I am working with the GH200, I can do some Hopper specific optimizations that are not mentioned in the course or original blog post. But that is an ambitious goal.
 
 This is still a work in progress.
 
@@ -111,11 +111,11 @@ dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE, 1);
 sgemm_baseline<<<gridDim, blockDim>>>(M, N, K, alpha, A, B, beta, C);
 ```
 
-For $m=n=k=4096$, this kernel achieves 502.5 GFLOPs. In comparison, cuBLAS achieves 50058.0 GFLOPs for the same matrix sizes, which is nearly 100x faster than the baseline implementation. 
+For $m=n=k=4096$, this kernel achieves 502.5 GFLOPs. In comparison, cuBLAS achieves 50058.0 GFLOPs for the same matrix sizes, which is nearly 100x faster than the baseline implementation.
 
 ## Global Memory Coalescing
 
-Looking at how we are launching the kernel and assuming $m=n=k=4096$, the warps will be executed with the following threads: 
+Looking at how we are launching the kernel and assuming $m=n=k=4096$, the warps will be executed with the following threads:
 
 ```bash
 Warp 0: (y=0, x=0..31)
@@ -125,7 +125,7 @@ Warp 1: (y=0, x=32..63)
 
 Consequently, each thread in a warp accesses a different row of A, the same column of B, and a different entry of C (along the column dimension). GPUs support 128B memory operations on contiguous data. Such load instructions can be issued not only on data used by a single thread, but on the entire data used during warp execution. Assuming each thread in a warp loads a different 32-bit float and that data is stored in contiguous memory, four of them can be coalesced into a single transaction.
 
-Since the matrices are stored in row-major order, we can take advantage of 128B loading for matrix A. However, since we access non-contiguous memory in matrices B and C, we cannot exploit this optimization. The solution is to redefine `x` and `y` to ensure that warps access data that can be coalesced. 
+Since the matrices are stored in row-major order, we can take advantage of 128B loading for matrix A. However, since we access non-contiguous memory in matrices B and C, we cannot exploit this optimization. The solution is to redefine `x` and `y` to ensure that warps access data that can be coalesced.
 
 We can achieve this as follows:
 ```
@@ -133,16 +133,16 @@ const int x = blockIdx.x * BLOCKSIZE + (threadIdx.x / BLOCKSIZE);
 const int y = blockIdx.y * BLOCKSIZE + (threadIdx.x % BLOCKSIZE);
 ```
 
-This ensures that each thread within a warp accesses a consecutive set of 32 columns of B and the same consecutive entries of C. Consequently, we reduce the number of load transactions each warp needs to perform while keeping the total number of warps unchanged. 
+This ensures that each thread within a warp accesses a consecutive set of 32 columns of B and the same consecutive entries of C. Consequently, we reduce the number of load transactions each warp needs to perform while keeping the total number of warps unchanged.
 
 For $m=n=k=4096$, this kernel achieves 6352.2 GFLOPs, a nearly 12x improvement, but still 8x slower than the cuBlas implementation.
 
 
 ## Shared Memory Cache-Blocking
 
-Each block is executed on a Streaming Multiprocessor (SM). Each SM has some (very fast) shared memory that can be accessed by all threads within the same block. Every block computes a $32 \times 32$ block of C. For this, each block uses 32 consecutive rows of A and 32 consecutive columns of B. However, these rows and columns are currently reloaded by every single warp. 
+Each block is executed on a Streaming Multiprocessor (SM). Each SM has some (very fast) shared memory that can be accessed by all threads within the same block. Every block computes a $32 \times 32$ block of C. For this, each block uses 32 consecutive rows of A and 32 consecutive columns of B. However, these rows and columns are currently reloaded by every single warp.
 
-We will move a $32 \times 32$ chunk of A and B into shared memory and let each warp compute its part before continuing to the next chunks. 
+We will move a $32 \times 32$ chunk of A and B into shared memory and let each warp compute its part before continuing to the next chunks.
 
 ```c++
 template <const int BLOCKSIZE>
@@ -200,7 +200,7 @@ For $m=n=k=4096$, this kernel achieves 9174.1 GFLOPs, a 1.5x improvement over th
 
 Instead of computing a single entry per thread, we now compute multiple entries of C per thread. This increases arithmetic intensity since a single load can be reused to compute multiple results.
 
-We introduce new parameters: BM and BN specify the block dimensions (rows and columns of C per block), BK controls the shared memory tile size (i.e. how much shared memory we can load in 1 iteration given the number of threads available to us), and TM defines how many results each thread computes. 
+We introduce new parameters: BM and BN specify the block dimensions (rows and columns of C per block), BK controls the shared memory tile size (i.e. how much shared memory we can load in 1 iteration given the number of threads available to us), and TM defines how many results each thread computes.
 
 ```c++
 // allocate thread-local cache for results in registerfile
@@ -241,7 +241,7 @@ for (uint resIdx = 0; resIdx < TM; ++resIdx) {
 }
 ```
 
-The computation loop makes the dot product the outer loop, allowing us to cache entries from B in a temporary variable and reuse them across multiple accumulations. 
+The computation loop makes the dot product the outer loop, allowing us to cache entries from B in a temporary variable and reuse them across multiple accumulations.
 
 For $m=n=k=4096$, this kernel achieves 17040.9 GFLOPs, a 1.85x improvement over the previous version, but still nearly 3x slower than the cuBLAS implementation.
 
@@ -276,7 +276,7 @@ for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
 }
 ```
 
-To compute the `TM` $\times$ `TN` block, each thread repeatedly accesses the same entries of A and B from shared memory. To reduce these expensive shared memory accesses, we cache the entries in local registers. 
+To compute the `TM` $\times$ `TN` block, each thread repeatedly accesses the same entries of A and B from shared memory. To reduce these expensive shared memory accesses, we cache the entries in local registers.
 
 ```c++
 // register caches for As and Bs
@@ -359,7 +359,7 @@ For $m=n=k=4096$, this kernel achieves 31420.8 GFLOPs. We are getting closer...
 
 ## Warptiling
 
-A warp consists of 32 threads and is the fundamental unit of scheduling on NVIDIA GPUs. Instead of having each thread independently compute its portion of the output matrix, warptiling assigns a tile of the output matrix to an entire warp. Threads within a warp collaborate to compute this tile, which reduces shared memory bank conflicts and improves data reuse. 
+A warp consists of 32 threads and is the fundamental unit of scheduling on NVIDIA GPUs. Instead of having each thread independently compute its portion of the output matrix, warptiling assigns a tile of the output matrix to an entire warp. Threads within a warp collaborate to compute this tile, which reduces shared memory bank conflicts and improves data reuse.
 
 ```c++
 // dotIdx loops over contents of SMEM
@@ -398,8 +398,8 @@ for (uint dotIdx = 0; dotIdx < BK; ++dotIdx) {
 }
 ```
 
-This kernel achieves 41496 GFLOPs, we achieved nearly $84$% of cuBLAS. 
+This kernel achieves 41496 GFLOPs, we achieved nearly $84$% of cuBLAS.
 
 
 
-TODO. 
+TODO.
