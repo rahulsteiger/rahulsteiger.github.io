@@ -80,7 +80,7 @@ I will use the testing infrastructure from the original blog post’s [GitHub](h
 
 The baseline kernel that we will be improving upon looks as follows:
 
-```c++
+```cpp
 __global__ void sgemm_baseline(int M, int N, int K, float alpha, const float *A,
                             const float *B, float beta, float *C) {
   const uint x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -100,7 +100,7 @@ __global__ void sgemm_baseline(int M, int N, int K, float alpha, const float *A,
 
 The kernel is launched with:
 
-```c++
+```cpp
 // create as many blocks as necessary to map all of C
 int BLOCK_SIZE = 32
 dim3 gridDim(CEIL_DIV(M, BLOCK_SIZE), CEIL_DIV(N, BLOCK_SIZE), 1);
@@ -129,7 +129,7 @@ Since the matrices are stored in row-major order, we can take advantage of 128B 
 
 We can achieve this as follows:
 
-```
+```cpp
 const int x = blockIdx.x * BLOCKSIZE + (threadIdx.x / BLOCKSIZE);
 const int y = blockIdx.y * BLOCKSIZE + (threadIdx.x % BLOCKSIZE);
 ```
@@ -144,7 +144,7 @@ Each block is executed on a Streaming Multiprocessor (SM). Each SM has some (ver
 
 We will move a $32 \times 32$ chunk of A and B into shared memory and let each warp compute its part before continuing to the next chunks.
 
-```c++
+```cpp
 template <const int BLOCKSIZE>
 __global__ void sgemm_shared_mem_block(int M, int N, int K, float alpha,
                                        const float *A, const float *B,
@@ -202,7 +202,7 @@ Instead of computing a single entry per thread, we now compute multiple entries 
 
 We introduce new parameters: BM and BN specify the block dimensions (rows and columns of C per block), BK controls the shared memory tile size (i.e. how much shared memory we can load in 1 iteration given the number of threads available to us), and TM defines how many results each thread computes.
 
-```c++
+```cpp
 // allocate thread-local cache for results in registerfile
 
 __shared__ float As[BM * BK];
@@ -249,7 +249,7 @@ For $m=n=k=4096$, this kernel achieves 17040.9 GFLOPs, a 1.85x improvement over 
 
 Instead of computing a single `TM` row of `C`, we compute a `TM` $\times$ `TN` block of `C` per thread. This further increases the arithmetic intensity. Since each thread now computes more results, it must load multiple items from both A and B.
 
-```c++
+```cpp
 // Each block computes BM * BN entries of C
 const uint totalResultsBlocktile = BM * BN;
 
@@ -278,7 +278,7 @@ for (uint bkIdx = 0; bkIdx < K; bkIdx += BK) {
 
 To compute the `TM` $\times$ `TN` block, each thread repeatedly accesses the same entries of A and B from shared memory. To reduce these expensive shared memory accesses, we cache the entries in local registers.
 
-```c++
+```cpp
 // register caches for As and Bs
 float regM[TM] = {0.0};
 float regN[TN] = {0.0};
@@ -320,7 +320,7 @@ We replace scalar loads and stores from global memory with vectorized operations
 
 For the tile loading phase, each thread now loads 4 consecutive elements at once:
 
-```c++
+```cpp
 // Update population of memory caches
 float4 tmp =
     reinterpret_cast<float4 *>(&A[innerRowA * K + innerColA * 4])[0];
@@ -335,7 +335,7 @@ reinterpret_cast<float4 *>(&Bs[innerRowB * BN + innerColB * 4])[0] =
 
 We apply the same vectorization when writing results back to C:
 
-```c++
+```cpp
 for (uint resIdxM = 0; resIdxM < TM; resIdxM += 1) {
   for (uint resIdxN = 0; resIdxN < TN; resIdxN += 4) {
     // load C vector into registers
@@ -360,7 +360,7 @@ For $m=n=k=4096$, this kernel achieves 31420.8 GFLOPs. We are getting closer...
 
 A warp consists of 32 threads and is the fundamental unit of scheduling on NVIDIA GPUs. Instead of having each thread independently compute its portion of the output matrix, warptiling assigns a tile of the output matrix to an entire warp. Threads within a warp collaborate to compute this tile, which reduces shared memory bank conflicts and improves data reuse.
 
-```c++
+```cpp
 // dotIdx loops over contents of SMEM
 for (uint dotIdx = 0; dotIdx < BK; ++dotIdx) {
   // populate registers for this thread's part of the warptile

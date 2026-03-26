@@ -419,7 +419,7 @@ NVIDIA provides libraries with highly optimized CUDA kernels for GPU computing.
 
 cuBLAS is NVIDIA's industry-standard library for BLAS and GEMM routines, highly optimized for GPU performance. It supports operation fusion for greater efficiency.
 
-```c++
+```cpp
 __half alpha_h = __float2half(1.0f), beta_h = __float2half(0.0f);
 // Performs half-precision matrix multiplication: d_C_h = alpha_h * d_A_h * d_B_h + beta_h * d_C_h
 cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N, M, K, &alpha_h, d_B_h, N, d_A_h, K, &beta_h, d_C_h, N);
@@ -445,7 +445,7 @@ Extension for more flexible APIs, mainly for deep learning workloads. Optimized 
 
 cuBLASLt provides a more flexible and high-performance matrix multiplication API, especially suited for deep learning and Tensor Core acceleration. It allows fine-grained control over operation parameters and memory layouts.
 
-```c++
+```cpp
 cublasLtHandle_t handle;
 cublasLtCreate(&handle);
 
@@ -485,7 +485,7 @@ Multi-GPU BLAS support. Thread-safe. Host+GPU solving is slower due to memory bo
 
 The following example demonstrates how to use cuBLASXt to perform single-precision matrix multiplication (SGEMM) across multiple GPUs. cuBLASXt allows you to select devices and operate directly on host memory, automatically managing data transfers and computation distribution.
 
-```c++
+```cpp
 cublasXtHandle_t handle;
 CHECK_CUBLAS(cublasXtCreate(&handle));
 
@@ -523,7 +523,7 @@ NVIDIA cuDNN is a GPU-accelerated library providing highly optimized implementat
 
 The following example demonstrates applying a tanh activation function to a 4D tensor using cuDNN:
 
-```c++
+```cpp
 cudnnHandle_t cudnn;
 cudnnCreate(&cudnn);
 
