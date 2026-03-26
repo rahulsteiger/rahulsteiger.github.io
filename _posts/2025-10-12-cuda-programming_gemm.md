@@ -1,7 +1,7 @@
 ---
 layout: distill
-title: CUDA Programming (Optimizing GEMM)
-description: This blog contains the notes of me (attempting) to create a fast GEMM CUDA implementation.
+title: CUDA Programming - Optimizing GEMM
+description: Notes on me (attempting) to create a fast GEMM CUDA implementation.
 
 tags: CUDA GH200 C++
 giscus_comments: false
@@ -68,13 +68,13 @@ These are my notes for Chapter 7 of the CUDA Programming Course – High-Perform
 
 This part of the course covers building a fast CUDA SGEMM from scratch. The approach is based on this [blog](https://siboehm.com/articles/22/CUDA-MMM) post, and the associated code can be found on [GitHub](https://github.com/siboehm/SGEMM_CUDA?tab=readme-ov-file). The original blog is very well written and features excellent figures, so I recommend checking it out before/ while reading my notes.
 
-Since I am working with the GH200, I can do some Hopper specific optimizations that are not mentioned in the course or original blog post. But that is an ambitious goal.
+Since I am working with the GH200, I can do some Hopper specific optimizations that are not mentioned in the course or original post. But that is an ambitious goal.
 
 This is still a work in progress.
 
 ## Setup
 
-I will use the testing infrastructure from the original blog post’s [GitHub](https://github.com/siboehm/SGEMM_CUDA?tab=readme-ov-file) repository. The only change I need to make is setting the `cmake` `CUDA_COMPUTE_CAPABILITY` parameter to 90.
+I will use the testing infrastructure from the original post’s [GitHub](https://github.com/siboehm/SGEMM_CUDA?tab=readme-ov-file) repository. The only change I need to make is setting the `cmake` `CUDA_COMPUTE_CAPABILITY` parameter to 90.
 
 ## Baseline implementation
 

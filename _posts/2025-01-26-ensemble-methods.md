@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Ensemble Methods
-description: Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This blog post is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.
+description: Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This note is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.
 
 tags: decision-trees random-forest boosting xgboost
 giscus_comments: false
@@ -143,7 +143,7 @@ $$
 \operatorname{Var}[\hat{f}(x)] = \frac{1}{n^2} \sum_{i=1}^n \operatorname{Var}[\hat{f}_i(x)].
 $$
 
-Consequently, we can reduce the variance arbitrarily by just using more estimators. However, assuming that $f_1, \dots, f_n$ are mutually independent is unrealistic if we assume they are trained on the same dataset. In this blog post, we will discuss algorithms that combine multiple weak learners while ensuring that $\operatorname{Cov}[\hat{f}_i(x), \hat{f}_j(x)] \approx 0$ and a sufficiently low bias.
+Consequently, we can reduce the variance arbitrarily by just using more estimators. However, assuming that $f_1, \dots, f_n$ are mutually independent is unrealistic if we assume they are trained on the same dataset. In this note, we will discuss algorithms that combine multiple weak learners while ensuring that $\operatorname{Cov}[\hat{f}_i(x), \hat{f}_j(x)] \approx 0$ and a sufficiently low bias.
 
 ---
 

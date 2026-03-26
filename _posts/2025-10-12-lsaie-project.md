@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: "An Evaluation of DeepSpeed ZeRO, Compilation, and Offloading"
-description: "This blog contains the final project of the course Large-Scale AI Engineering."
+description: "Notes from the final project of the course Large-Scale AI Engineering."
 
 tags: DeepSpeed LSAIE Finetuning
 giscus_comments: false
@@ -263,7 +263,7 @@ To answer this, we vary the number of GPUs from 1 to 4 and measure the largest m
 | Stage 3 + ZeroOffload  | 5120  |  5120  |  5120  |  5120  |
 | Stage 3 + SuperOffload | 5120  |  5120  |  5120  |  5120  |
 
-_Table 3: Maximum Trainable Model Hidden Dimension ($d_{\text{model}}$) by DeepSpeed Stage. Values represent the largest dimension that fit in memory without OOM._
+_Table 3: Maximum Trainable Model Hidden Dimension ($d_{\text{model}}$) by DeepSpeed Stage. Values represent the largest dimension that fit in memory without OOM.\_
 
 The results highlight that ZeRO Stage 3 primarily improves _memory efficiency per GPU_, while CPU offloading determines the _absolute upper bound_ on model size. Notably, offloading enables identical model sizes across all GPU counts, indicating that host memory, rather than GPU count, becomes the dominant constraint in these configurations. With offloading enabled, maximum model size becomes independent of GPU count: host memory (512 GB per node) rather than aggregate VRAM determines capacity, and each GPU offloads to its own local CPU memory.
 

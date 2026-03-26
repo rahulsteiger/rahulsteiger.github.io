@@ -1,7 +1,7 @@
 ---
 layout: distill
-title: CUDA Programming (Fundamentals)
-description: This blog contains the notes of me (properly) learning how to use CUDA.
+title: CUDA Programming - Fundamentals
+description: Notes on me (properly) learning how to use CUDA.
 
 tags: CUDA GH200 C++
 giscus_comments: false
@@ -108,7 +108,7 @@ Device 0: "NVIDIA GH200 120GB"
   Device PCI Domain ID / Bus ID / location ID:   9 / 1 / 0
 ```
 
-The GH200 system has a higher compute capability compared to the one used in the Tutorial. This means that the system I am working on has some additional features that are not covered in the tutorial. How to properly use those features is for me to figure out and will be the topic of a future blog post.
+The GH200 system has a higher compute capability compared to the one used in the Tutorial. This means that the system I am working on has some additional features that are not covered in the tutorial. How to properly use those features is for me to figure out and will be the topic of a future note.
 
 Additionally, I created a private fork of the course's repo following the instructions [here](https://gist.github.com/0xjac/85097472043b697ab57ba1b1c7530274).
 
@@ -153,7 +153,7 @@ There are a `dim3` (3D), `dim2` (2D), int (1D) types that you can pass to the ke
 - A warp executes 32 threads in parallel (SIMT)
 - All threads in a warp execute the same instruction simultaneously
 
-Note: CUDA Compute Capability 9.0 introduced the notion of Clusters. In short, Clusters are a group of thread blocks that can communicate with each other. Since this course only considers GPUs with lower Compute Capabilities, this will be the topic of another future blog post.
+Note: CUDA Compute Capability 9.0 introduced the notion of Clusters. In short, Clusters are a group of thread blocks that can communicate with each other. Since this course only considers GPUs with lower Compute Capabilities, this will be the topic of another future note.
 
 ### Indexing
 
