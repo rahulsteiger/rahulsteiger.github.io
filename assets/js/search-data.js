@@ -4,17 +4,17 @@ const ninja = document.querySelector('ninja-keys');
 // add the home and posts menu items
 ninja.data = [{
     id: "nav-about",
-    title: "about",
+    title: "About",
     section: "Navigation",
     handler: () => {
       window.location.href = "/";
     },
-  },{id: "nav-blog",
-          title: "blog",
+  },{id: "nav-notes",
+          title: "Notes",
           description: "",
           section: "Navigation",
           handler: () => {
-            window.location.href = "/blog/";
+            window.location.href = "/notes/index.html";
           },
         },{id: "nav-",
           title: "",
@@ -27,66 +27,66 @@ ninja.data = [{
       
         title: "An Evaluation of DeepSpeed ZeRO, Compilation, and Offloading",
       
-      description: "This blog contains the final project of the course Large-Scale AI Engineering.",
+      description: "Notes from the final project of the course Large-Scale AI Engineering.",
       section: "Posts",
       handler: () => {
         
-          window.location.href = "/blog/2025/lsaie-project/";
+          window.location.href = "/notes/2025/lsaie-project/";
         
       },
     },{id: "post-cuda-programming-optimizing-gemm",
       
-        title: "CUDA Programming (Optimizing GEMM)",
+        title: "CUDA Programming - Optimizing GEMM",
       
-      description: "This blog contains the notes of me (attempting) to create a fast GEMM CUDA implementation.",
+      description: "Notes on me (attempting) to create a fast GEMM CUDA implementation.",
       section: "Posts",
       handler: () => {
         
-          window.location.href = "/blog/2025/cuda-programming_gemm/";
+          window.location.href = "/notes/2025/cuda-programming_gemm/";
         
       },
     },{id: "post-cuda-programming-fundamentals",
       
-        title: "CUDA Programming (Fundamentals)",
+        title: "CUDA Programming - Fundamentals",
       
-      description: "This blog contains the notes of me (properly) learning how to use CUDA.",
+      description: "Notes on me (properly) learning how to use CUDA.",
       section: "Posts",
       handler: () => {
         
-          window.location.href = "/blog/2025/cuda-programming/";
+          window.location.href = "/notes/2025/cuda-programming/";
         
       },
     },{id: "post-running-deepseek-r1-locally",
       
         title: "Running DeepSeek R1 locally",
       
-      description: "This blog post presents the steps required to run inference for DeepSeek R1 using llama.cpp on a single HPC node equipped with 4 A100 GPUs and 1 TB of memory.",
+      description: "Steps required to run inference for DeepSeek R1 using llama.cpp on a single HPC node equipped with 4 A100 GPUs and 1 TB of memory.",
       section: "Posts",
       handler: () => {
         
-          window.location.href = "/blog/2025/llamacpp-deepseek/";
+          window.location.href = "/notes/2025/llamacpp-deepseek/";
         
       },
     },{id: "post-biased-coin",
       
         title: "Biased Coin",
       
-      description: "This blog post presents a nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me.",
+      description: "A nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me.",
       section: "Posts",
       handler: () => {
         
-          window.location.href = "/blog/2025/biased-coin/";
+          window.location.href = "/notes/2025/biased-coin/";
         
       },
     },{id: "post-ensemble-methods",
       
         title: "Ensemble Methods",
       
-      description: "Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This blog post is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.",
+      description: "Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This note is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.",
       section: "Posts",
       handler: () => {
         
-          window.location.href = "/blog/2025/ensemble-methods/";
+          window.location.href = "/notes/2025/ensemble-methods/";
         
       },
     },{id: "news-a-simple-inline-announcement",
