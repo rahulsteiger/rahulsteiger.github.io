@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: CUDA Programming - Optimizing GEMM
-description: Notes on me (attempting) to create a fast GEMM CUDA implementation.
+description: "A work-in-progress attempt at writing a fast GEMM kernel."
 
 tags: CUDA GH200 C++
 giscus_comments: false

@@ -1,7 +1,7 @@
 ---
 layout: distill
-title: "An Evaluation of DeepSpeed ZeRO, Compilation, and Offloading"
-description: "Notes from the final project of the course Large-Scale AI Engineering."
+title: "Scaling LLM Training with DeepSpeed"
+description: "Making the most of limited GPU memory with DeepSpeed."
 
 tags: DeepSpeed LSAIE Finetuning
 giscus_comments: false

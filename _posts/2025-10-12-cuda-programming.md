@@ -1,11 +1,11 @@
 ---
 layout: distill
 title: CUDA Programming - Fundamentals
-description: Notes on me (properly) learning how to use CUDA.
+description: "The fundamentals of GPU programming, from first principles."
 
 tags: CUDA GH200 C++
 giscus_comments: false
-date: 2025-10-12
+date: 2025-09-16
 featured: false
 mermaid:
   enabled: true
