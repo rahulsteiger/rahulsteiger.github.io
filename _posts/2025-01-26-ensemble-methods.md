@@ -159,7 +159,7 @@ Decision trees are a popular sequential model, relying on the recursive partitio
     </div>
 </div>
 
-_Figure 1: Schematic representation of partitioning of the feature space into two disjoint subspaces based on feature ${x}_i$ and threshold $\theta$. The space for ${x}_i < \theta$ is patterned in red. Each side corresponds to exactly one leaf._
+<div class="caption">Figure 1: Schematic representation of partitioning of the feature space into two disjoint subspaces based on feature ${x}_i$ and threshold $\theta$. The space for ${x}_i < \theta$ is patterned in red. Each side corresponds to exactly one leaf.</div>
 
 Following the discussion in <d-cite key="shwartz-2014"></d-cite>, one way to split the data is by applying a threshold $\theta$ to a given numeric feature dimension. We can check if the $i$'th feature of $\mathbf{x}$ is smaller than the threshold: $x_i < \theta$. Therefore, we move to the left child if $\mathbb{1}_{[\mathbf{x}_i < \theta]}$ as illustrated in Figure 1. This then divides our $d$-dimensional space $\mathcal{X}=\mathbb{R}^d$ into two parts with a direct correspondence between the leaves and subspaces. In general, the decision tree divides the feature space into axis-aligned hyperplanes <d-cite key="rokach-2016"></d-cite>. It is also possible to follow a similar procedure for categorical values and check them against a set of values <d-cite key="kotsiantis-2013"></d-cite>.
 
@@ -612,7 +612,7 @@ Many real-world datasets are sparse, which is generally caused by missing values
     </div>
 </div>
 
-_Figure: Handling Missing Values. Reproduced from <d-cite key="xgboost"></d-cite>_
+<div class="caption">Figure: Handling Missing Values. Reproduced from <d-cite key="xgboost"></d-cite>.</div>
 
 XGBoost adds a default direction for missing values in the decision tree. In order to generate a new split for a feature, only the non-missing values are considered. However, the split is computed for both cases where the missing values either all go to the left or the right direction. The optimal split and the default direction for the missing values are chosen based on the maximum gain. For certain very sparse datasets, this can lead to a 50x improvement in runtime <d-cite key="xgboost"></d-cite> compared to a basic solution such as imputation.
 
@@ -639,7 +639,7 @@ We use the `California Housing` dataset from `scikit-learn` <d-cite key="scikit-
     </div>
 </div>
 
-_Figure: Runtime and R2 Score with different number of trees. The left figure presents an overview of all evaluated models, whereas the right excludes the Gradient Boosting model to enhance readability._
+<div class="caption">Figure: Runtime and R2 Score with different number of trees. The left figure presents an overview of all evaluated models, whereas the right excludes the Gradient Boosting model to enhance readability.</div>
 
 As one can clearly see, the runtime of standard gradient boosting is significantly longer compared to the other methods. This can be explained by the fact that the iterative tree building of gradient boosting is hard to parallelize. Since the experiments were run on a machine with 128 cores, this significantly impacts runtime. Another observation that can be made is that the Random Forest and Extra Trees both plateau much earlier than the gradient methods while having the shortest runtime.
 

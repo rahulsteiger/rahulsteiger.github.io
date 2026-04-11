@@ -931,7 +931,7 @@
       var cite = title_string(ent);
       cite += link_string(ent) + "<br>";
       if (ent.author) {
-        cite += author_string(ent, "${L}, ${I}", ", ", " and ");
+        cite += author_string(ent, "${L}, ${F}", ", ", " and ");
         if (ent.year || ent.date) {
           cite += ", ";
         }

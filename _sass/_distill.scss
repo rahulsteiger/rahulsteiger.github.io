@@ -15,7 +15,7 @@ d-title p {
 }
 
 d-title p:not(.custom-byline):not(.post-date) {
-  font-style: italic !important;
+  font-style: normal !important;
   font-size: 22px !important;
 }
 
@@ -89,6 +89,7 @@ d-article {
 
   h3 {
     font-size: 24px !important;
+    font-style: normal !important;
     margin-top: 1.5rem !important;
     margin-bottom: 0.15rem !important;
   }

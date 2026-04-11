@@ -103,7 +103,7 @@ We train a GPT-style decoder-only Transformer with 32 layers, 32 attention heads
 |              4096               |    6.7B    |
 |              5120               |   10.4B    |
 
-_Table 1: Model configurations used in our experiments. Parameter counts exclude embedding layers._
+<div class="caption">Table 1: Model configurations used in our experiments. Parameter counts exclude embedding layers.</div>
 
 ### Training
 
@@ -136,7 +136,7 @@ We observed that while Stage 0 failed for the 4096-dimension model, enabling hig
 | Stage 2            |   4096    | Success |      58.6      |
 | Stage 3            |   4096    | Success |      52.6      |
 
-_Table 2: Comparison of training stability and memory usage for a 4096-dimension model across DeepSpeed ZeRO stages on 4 GPUs._
+<div class="caption">Table 2: Comparison of training stability and memory usage for a 4096-dimension model across DeepSpeed ZeRO stages on 4 GPUs.</div>
 
 Notably, Stage 3 achieves approximately 10% lower peak memory than Stages 1 and 2. This difference arises from how each stage partitions model state. In Stages 1 and 2, each GPU retains a full copy of the model parameters throughout training—only optimizer states (Stage 1) or optimizer states and gradients (Stage 2) are partitioned across workers. In contrast, Stage 3 partitions the parameters themselves: each GPU stores only 1/N of the parameters persistently (where N is the number of GPUs) and reconstructs full parameter tensors on-demand via all-gather operations during forward and backward passes. The gathered parameters are discarded after use, freeing memory. The observed 6 GB reduction corresponds directly to eliminating this redundant parameter storage. However, this memory benefit comes at the cost of increased communication volume, a trade-off we address through compilation in the next section.
 
@@ -167,7 +167,8 @@ The authors report up to 1.28× throughput improvement over ZeRO-3 on Llama-3 70
 We measured training throughput with and without compilation across different ZeRO stages. Our results demonstrate that DeepCompile provides consistent speedups across all configurations. Specifically, DeepCompile improves throughput by approximately 12% for ZeRO Stage 1 and 13% for Stage 2 relative to the uncompiled baseline, increasing throughput from 19.7k to 22.1k tokens/sec and from 19.6k to 22.2k tokens/sec, respectively. The benefits are substantially more pronounced for ZeRO Stage 3, where DeepCompile achieves a ~61% speedup, boosting throughput from 14.6k to 23.5k tokens/sec.
 
 {% include figure.liquid loading="eager" path="assets/img/lsaie/throughput_comparison_new.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-_Figure 1: Throughput comparison across DeepSpeed ZeRO stages using different compilation methods. Values are averaged over training steps ≥6, excluding the initial warm-up phase._
+
+<div class="caption">Figure 1: Throughput comparison across DeepSpeed ZeRO stages using different compilation methods. Values are averaged over training steps ≥6, excluding the initial warm-up phase.</div>
 
 While compilation generally improves performance, the magnitude of improvement varies considerably by compiler. `torch.compile` yields only marginal gains, likely because it optimizes computational kernels without addressing the communication bottlenecks that dominate overall performance. In contrast, DeepCompile incorporates communication constraints into its optimization strategy, enabling it to substantially outperform the baseline across all configurations. We hypothesize that the disproportionate gains observed in Stage 3 stem from additional optimization passes that DeepCompile applies specifically to ZeRO-3 workloads.
 
@@ -206,14 +207,16 @@ While SuperOffload provided significant performance improvements, these gains we
 When fine-tuning pre-trained models, rollbacks are rare after warmup—the SuperOffload authors demonstrate this with BLOOM-176B. However, training from scratch produces large, unstable gradient norms that trigger clipping at nearly every step, causing constant rollbacks that negate the benefits of speculation. While rollback frequency reportedly decreases after ~1000 steps, we could not verify this due to limited compute budget and instead disabled gradient clipping for subsequent experiments.
 
 {% include figure.liquid loading="eager" path="assets/img/lsaie/grad_clip_comparison.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-_Figure 2: Training throughput for SuperOffload with and without gradient clipping enabled. Gradient clipping triggers frequent rollbacks in early training, negating speculative execution benefits._
+
+<div class="caption">Figure 2: Training throughput for SuperOffload with and without gradient clipping enabled. Gradient clipping triggers frequent rollbacks in early training, negating speculative execution benefits.</div>
 
 ### VRAM Savings
 
 Enabling CPU offloading substantially reduced GPU memory usage compared to standard ZeRO Stage 3.
 
 {% include figure.liquid loading="eager" path="assets/img/lsaie/stage3_offload_metrics_time.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-_Figure 3: Peak and average GPU memory usage for ZeRO Stage 3 with and without CPU offloading. Both offloading strategies substantially reduce VRAM requirements, with ZeroOffload achieving the lowest average memory footprint._
+
+<div class="caption">Figure 3: Peak and average GPU memory usage for ZeRO Stage 3 with and without CPU offloading. Both offloading strategies substantially reduce VRAM requirements, with ZeroOffload achieving the lowest average memory footprint.</div>
 
 As shown in Figure 3, offloading dramatically reduces GPU memory usage. ZeroOffload reduces peak memory from 52.6 GB (Stage 3 baseline) to 24.2 GB—a 54% reduction—while SuperOffload achieves 30.5 GB peak memory (42% reduction). Average memory during training drops even more substantially: from 33.3 GB to 4.9 GB for ZeroOffload and 6.8 GB for SuperOffload. The large gap between peak and average memory with offloading reflects the model initialization phase, during which parameters are fully materialized on GPU before offloading takes effect.
 
@@ -222,7 +225,8 @@ As shown in Figure 3, offloading dramatically reduces GPU memory usage. ZeroOffl
 CPU offloading incurs a performance cost due to data transfers between CPU and GPU. The increased movement of data and the resulting synchronization overhead can lead to stalling, which significantly reduces throughput.
 
 {% include figure.liquid loading="eager" path="assets/img/lsaie/average_throughput_steps_6_plus.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-_Figure 4: Average training throughput (tokens per second) measured after the warm-up phase (steps ≥ 6) for different DeepSpeed configurations._
+
+<div class="caption">Figure 4: Average training throughput (tokens per second) measured after the warm-up phase (steps ≥ 6) for different DeepSpeed configurations.</div>
 
 Compared to Stage 3 training without offloading, SuperOffload reduces throughput by approximately 20%, while ZeroOffload results in a much larger degradation of about 45%, as shown in Figure 4. Despite this cost, offloading remains valuable when model size exceeds available VRAM—a 20–45% throughput reduction is preferable to being unable to train at all.
 
@@ -231,7 +235,8 @@ Compared to Stage 3 training without offloading, SuperOffload reduces throughput
 While SuperOffload improved throughput compared to standard ZeroOffload, we observed that training loss did not decrease in multi-GPU configurations. Investigation revealed that gradients were computed correctly (non-zero values), but model parameters were not being updated properly. Notably, the same configuration converged normally on a single GPU.
 
 {% include figure.liquid loading="eager" path="assets/img/lsaie/loss_comparison.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-_Figure 5: Training loss for Multi-GPU ZeroOffload and SuperOffload across GPU configurations. SuperOffload configurations fail to decrease loss despite correct gradient computation._
+
+<div class="caption">Figure 5: Training loss for Multi-GPU ZeroOffload and SuperOffload across GPU configurations. SuperOffload configurations fail to decrease loss despite correct gradient computation.</div>
 
 We attempted to reproduce this issue using the official [DeepSpeedExamples](https://github.com/deepspeedai/DeepSpeedExamples), which exhibited identical convergence failures. This suggests the issue stems from incorrect gradient aggregation or a synchronization bug in multi-GPU settings, rather than our specific configuration. We verified that gradients were non-zero and correctly computed on each rank, but parameter updates did not propagate correctly after synchronization.
 
@@ -242,7 +247,8 @@ We were unable to determine whether this issue is specific to the ALPS system or
 We investigated whether DeepCompile could be combined with CPU offloading to achieve both memory savings and improved throughput. Running SuperOffload with DeepCompile yielded a significant throughput improvement over SuperOffload alone. However, given the convergence issues identified with SuperOffload in the previous section, we cannot determine whether this speedup results from legitimate optimization or from dependency violations causing incorrect execution.
 
 {% include figure.liquid loading="eager" path="assets/img/lsaie/combined_metrics_labeled.png" class="img-fluid rounded z-depth-1" zoomable=true %}
-_Figure 6: Performance comparison of DeepSpeed offloading strategies with and without DeepCompile. (a) Average training throughput (tokens/sec) for ZeroOffload and SuperOffload configurations. (b) Training loss convergence over time for the ZeroOffload strategy, comparing the Baseline (No Compile) against DeepCompile._
+
+<div class="caption">Figure 6: Performance comparison of DeepSpeed offloading strategies with and without DeepCompile. (a) Average training throughput (tokens/sec) for ZeroOffload and SuperOffload configurations. (b) Training loss convergence over time for the ZeroOffload strategy, comparing the Baseline (No Compile) against DeepCompile.</div>
 
 Further investigation revealed that ZeroOffload combined with DeepCompile also fails to converge, as shown in Figure 6. Since ZeroOffload without DeepCompile converges normally, this suggests the issue lies in the interaction between DeepCompile and offloading rather than offloading itself. This points to a broader incompatibility between DeepCompile's graph transformations and DeepSpeed's offloading mechanisms, at least on our system configuration.
 
@@ -263,7 +269,7 @@ To answer this, we vary the number of GPUs from 1 to 4 and measure the largest m
 | Stage 3 + ZeroOffload  | 5120  |  5120  |  5120  |  5120  |
 | Stage 3 + SuperOffload | 5120  |  5120  |  5120  |  5120  |
 
-_Table 3: Maximum Trainable Model Hidden Dimension ($d_{\text{model}}$) by DeepSpeed Stage. Values represent the largest dimension that fit in memory without OOM.\_
+<div class="caption">Table 3: Maximum Trainable Model Hidden Dimension ($d_{\text{model}}$) by DeepSpeed Stage. Values represent the largest dimension that fit in memory without OOM.</div>
 
 The results highlight that ZeRO Stage 3 primarily improves _memory efficiency per GPU_, while CPU offloading determines the _absolute upper bound_ on model size. Notably, offloading enables identical model sizes across all GPU counts, indicating that host memory, rather than GPU count, becomes the dominant constraint in these configurations. With offloading enabled, maximum model size becomes independent of GPU count: host memory (512 GB per node) rather than aggregate VRAM determines capacity, and each GPU offloads to its own local CPU memory.
 
