@@ -34,11 +34,11 @@ ninja.data = [{
           window.location.href = "/notes/2026/llm-serving-background/";
         
       },
-    },{id: "post-an-evaluation-of-deepspeed-zero-compilation-and-offloading",
+    },{id: "post-scaling-llm-training-with-deepspeed",
       
-        title: "An Evaluation of DeepSpeed ZeRO, Compilation, and Offloading",
+        title: "Scaling LLM Training with DeepSpeed",
       
-      description: "Notes from the final project of the course Large-Scale AI Engineering.",
+      description: "Making the most of limited GPU memory with DeepSpeed.",
       section: "Posts",
       handler: () => {
         
@@ -49,7 +49,7 @@ ninja.data = [{
       
         title: "CUDA Programming - Optimizing GEMM",
       
-      description: "Notes on me (attempting) to create a fast GEMM CUDA implementation.",
+      description: "A work-in-progress attempt at writing a fast GEMM kernel.",
       section: "Posts",
       handler: () => {
         
@@ -60,7 +60,7 @@ ninja.data = [{
       
         title: "CUDA Programming - Fundamentals",
       
-      description: "Notes on me (properly) learning how to use CUDA.",
+      description: "The fundamentals of GPU programming, from first principles.",
       section: "Posts",
       handler: () => {
         
@@ -93,7 +93,7 @@ ninja.data = [{
       
         title: "Ensemble Methods",
       
-      description: "Ensemble methods combine multiple simple learning algorithms to achieve superior overall performance. This note is an adaptation of a group project from the CS4270 course I took at the National University of Singapore during my exchange.",
+      description: "A deep dive into ensemble methods, from decision trees to XGBoost.",
       section: "Posts",
       handler: () => {
         
