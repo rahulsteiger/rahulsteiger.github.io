@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-an-evaluation-of-deepspeed-zero-compilation-and-offloading",
+        },{id: "post-the-gpu-memory-wall-in-llm-serving",
+      
+        title: "The GPU Memory Wall in LLM Serving",
+      
+      description: "Why GPU memory is the bottleneck, and what the GH200 changes.Part 1 of 3 from my Master&#39;s thesis at ETH Zurich.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/notes/2026/llm-serving-background/";
+        
+      },
+    },{id: "post-an-evaluation-of-deepspeed-zero-compilation-and-offloading",
       
         title: "An Evaluation of DeepSpeed ZeRO, Compilation, and Offloading",
       
