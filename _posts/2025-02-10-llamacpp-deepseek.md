@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Running DeepSeek R1 locally
-description: Steps required to run inference for DeepSeek R1 using llama.cpp on a single HPC node equipped with 4 A100 GPUs and 1 TB of memory.
+description: Running inference for DeepSeek R1 with llama.cpp on a 4×A100 node.
 
 tags: deepseek llama.cpp llms
 giscus_comments: false
