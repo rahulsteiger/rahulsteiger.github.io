@@ -18,6 +18,6 @@ selected_papers: False # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 ---
 
-I recently completed my MSc in Data Science at ETH Zurich. My thesis, at the [Efficient Architectures and Systems Lab](https://systems.ethz.ch/research/easl.html), focused on optimizing large-scale LLM serving on the Alps supercomputer (GH200 Grace Hopper). Along the way I contributed a [50× speedup for multimodal image cache lookups to vLLM](https://github.com/vllm-project/vllm/pull/29621) and co-authored a reproducibility paper at SC.
+I recently completed my MSc in Data Science at ETH Zurich. My thesis, at the [Efficient Architectures and Systems Lab](https://systems.ethz.ch/research/easl.html), focused on optimizing large-scale LLM serving on the Alps supercomputer (GH200 Grace Hopper). Along the way I contributed a [50× speedup for multimodal image cache lookups to vLLM](https://github.com/vllm-project/vllm/pull/29621).
 
 Previously: Applied Research Intern at Thomson Reuters Labs, Research Intern at OIST, exchange at NUS, and BSc in Computer Science at ETH, where I competed with [Team RACKlette](https://racklette.ethz.ch/) in international student cluster competitions.
