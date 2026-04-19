@@ -84,8 +84,8 @@ Naive autoregressive generation would recompute attention over all preceding tok
 
 With KV caching, text generation divides into two phases with distinct computational characteristics. During the _prefill_ phase, the model processes the entire input prompt in a single forward pass, computing attention across all input tokens and populating the KV cache. This phase is compute-bound, with large matrix multiplications that exhibit high arithmetic intensity. The _decode_ phase then generates output tokens one at a time, with each step attending to the cached KV states. Despite reduced computation per token, decode is typically memory-bound: each step must load model weights and the entire KV cache from memory while performing relatively little computation.
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
+<div class="row mt-3 justify-content-center">
+    <div class="col-sm-11 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/llm-serving-background/prefill_decode.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
@@ -102,8 +102,8 @@ As LLM inference is projected to consume an increasing fraction of global datace
 
 Static batching requires all requests in a batch to complete before new requests can be scheduled, leading to GPU underutilization when request lengths vary. Orca <d-cite key="orca2022"></d-cite> addresses this by making scheduling decisions at each autoregressive generation step. This allows completed requests to exit early and new requests to continuously enter the batch, significantly improving throughput. This approach is known as iteration-level scheduling or continuous batching.
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
+<div class="row mt-3 justify-content-center">
+    <div class="col-sm-11 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/llm-serving-background/continuous_batching.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
@@ -116,8 +116,8 @@ Early continuous batching implementations processed either prefill or decode req
 
 Combining prefill and decode requests in the same batch introduces a scheduling challenge: prefill is compute-bound and processes many tokens in parallel, while decode is memory-bound and generates tokens sequentially. Without careful management, long prefills can stall ongoing decodes for several seconds, causing latency spikes. Sarathi <d-cite key="sarathi2023"></d-cite> addresses this with chunked prefills, which split prefill requests into smaller chunks that can be interleaved with decode iterations. Sarathi-Serve <d-cite key="sarathiserve2024"></d-cite> extends this approach with stall-free scheduling, enabling new requests to enter a batch without pausing ongoing decodes.
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
+<div class="row mt-3 justify-content-center">
+    <div class="col-sm-10 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/llm-serving-background/chunked_prefill.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
@@ -128,8 +128,8 @@ Combining prefill and decode requests in the same batch introduces a scheduling 
 
 During the decode phase, each generation step processes only a single token per request. This results in very brief GPU computations. Consequently, the time taken by the CPU to launch these kernels often exceeds the actual execution time on the GPU. This phenomenon is known as kernel launch overhead. CUDA Graphs address this bottleneck by capturing a sequence of kernel operations into a directed acyclic graph. This allows the entire sequence to be launched with a single CPU operation, drastically reducing overhead and improving overall GPU utilization.
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
+<div class="row mt-3 justify-content-center">
+    <div class="col-sm-11 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/llm-serving-background/cuda_graphs.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
@@ -184,8 +184,8 @@ The Grace CPU features 72 Arm Neoverse V2 cores with up to 480 GB of LPDDR5X mem
 
 Multiple GH200 units can be connected via NVLink Switch, with up to 32 superchips forming a single cache-coherent system where all GPUs communicate at 900 GB/s bidirectional bandwidth.
 
-<div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
+<div class="row mt-3 justify-content-center">
+    <div class="col-sm-10 mt-3 mt-md-0">
         {% include figure.liquid loading="eager" path="assets/img/llm-serving-background/superchip.png" class="img-fluid rounded z-depth-1" %}
     </div>
 </div>
