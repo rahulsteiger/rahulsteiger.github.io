@@ -11,6 +11,15 @@ authors:
   - name: Rahul Steiger
     affiliations:
       name: ETH Zurich
+  - name: Foteini Strati
+    affiliations:
+      name: ETH Zurich
+  - name: Xiaozhe Yao
+    affiliations:
+      name: ETH Zurich
+  - name: Prof. Ana Klimovic
+    affiliations:
+      name: ETH Zurich
 
 bibliography: 2026-04-11-llm-serving-background.bib
 
