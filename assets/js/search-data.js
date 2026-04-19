@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-the-gpu-memory-wall-in-llm-serving",
+        },{id: "post-profiling-vllm-on-the-gh200",
+      
+        title: "Profiling vLLM on the GH200",
+      
+      description: "What we learned benchmarking vLLM on the NVIDIA GH200.Part 2 of 3 from my Master&#39;s thesis at ETH Zurich.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/notes/2026/vllm-characterization/";
+        
+      },
+    },{id: "post-the-gpu-memory-wall-in-llm-serving",
       
         title: "The GPU Memory Wall in LLM Serving",
       
