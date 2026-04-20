@@ -268,4 +268,4 @@ The emergence of tightly coupled heterogeneous GPU/CPU architectures — often r
 
 ## What's Next
 
-This post covered the essential background for understanding LLM serving and the memory challenges that motivate offloading. In the [next post](/notes/2026/llm-serving-characterization/), I will present our characterization of vLLM on the GH200, including bandwidth microbenchmarks, the impact of CUDA graphs, and why existing offloading mechanisms fall short. In the [final post](/notes/2026/llm-serving-dynamic-offloading/), I will present our dynamic parameter offloading system and its evaluation.
+This post covered the essential background for understanding LLM serving and the memory challenges that motivate offloading. In the [next post](/notes/2026/vllm-characterization/), I will present our characterization of vLLM on the GH200, including bandwidth microbenchmarks, the impact of CUDA graphs, and why existing offloading mechanisms fall short. In the [final post](/notes/2026/llm-serving-dynamic-offloading/), I will present our dynamic parameter offloading system and its evaluation.
