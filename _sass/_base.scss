@@ -1687,3 +1687,25 @@ ninja-keys::part(ninja-input-wrapper) {
     }
   }
 }
+
+.notes-post-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3rem;
+
+  .notes-post-date {
+    color: var(--global-text-color-light);
+    font-size: 1.55rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 575px) {
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .notes-post-date {
+      font-size: 1.1rem;
+    }
+  }
+}

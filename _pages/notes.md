@@ -39,8 +39,8 @@ pagination:
 
     {% for post in postlist %}
     <li style="margin-bottom: 1.5rem;">
-      <div style="display: flex; align-items: baseline; gap: 3rem;">
-        <div style="color: var(--global-text-color-light); font-size: 1.55rem; white-space: nowrap; flex-shrink: 0;">
+      <div class="notes-post-row">
+        <div class="notes-post-date">
           {{ post.date | date: '%b %d, %Y' }}
         </div>
         <div style="flex: 1;">

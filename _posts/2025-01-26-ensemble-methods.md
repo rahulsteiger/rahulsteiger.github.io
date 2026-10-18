@@ -432,9 +432,11 @@ $$
 
 Early Stopping is a method that is used to estimate the number of weak learners required for training. Before training the model, we set aside a part of the training data, which we will refer to as the validation data. We evaluate our model on this validation set by adding new estimators during training. As soon as the performance on the validation set decreases or does not improve, we will stop training. This means that no new estimators are added.
 
+<a id="shrinkage"></a>
+
 #### Shrinkage/Learning Rate
 
-We can add a parameter $\nu$, which scales the contribution of each weak learner. The update in equation $$\ref{math_opt_orig}$$ will be changed to:
+We can add a parameter $\nu$, which scales the contribution of each weak learner. The update in equation $$\ref{math_F}$$ will be changed to:
 
 $$
 F_m(x) = F_{m-1}(x) + \nu \cdot \gamma_m h_m(x)
@@ -521,13 +523,13 @@ $$
 F_0(x) = c = \underset{a}{\arg \min } \mathbb{E}_{x, y} [\mathcal{L}(y, a)]
 $$
 
-We further define for $m \geq 1$ and some twice differentiable loss function $\mathcal{L}$:
+We further define for $m \geq 1$ and a twice differentiable loss function $\mathcal{L}$, assuming positive second derivatives for the weighted least-squares formulation below:
 
 $$
 \begin{align}
     g &= \nabla_{F_{m-1}(x)} \mathcal{L}(y, F_{m-1}(x)) \label{math_res_2}\\
     H &= \nabla^2_{F_{m-1}(x)} \mathcal{L}(y, F_{m-1}(x)) \label{math_res_2H}\\
-    h_m &= \underset{h \in \mathcal{H}}{\arg \min } \mathbb{E}_{x, y}\left[\frac{H}{2} \left(\frac{g}{H} - h(x)\right)^2\right] \label{math_h_2}\\
+    h_m &= \underset{h \in \mathcal{H}}{\arg \min } \mathbb{E}_{x, y}\left[\frac{H}{2} \left(h(x) + \frac{g}{H}\right)^2\right] \label{math_h_2}\\
     F_m(x) &= F_{m-1}(x) + h_m(x) \label{math_F_2}
 \end{align}
 $$
@@ -552,14 +554,14 @@ $$
 \end{align}
 $$
 
-The optimization problem for this approximation can be rewritten as follows:
+Assuming $H>0$, we can complete the square. Removing the original loss and adding $g^2/(2H)$ does not change the minimizer because neither term depends on $h$ at this boosting iteration:
 
 $$
 \begin{align}
     h_m
     &= \underset{h \in \mathcal{H}}{\arg \min } \mathbb{E}_{x, y} \left[\mathcal{L}(y, F_{m-1}(x)) + g h(x) + \frac{1}{2} H h(x)^2\right] \\
-    &= \underset{h \in \mathcal{H}}{\arg \min } \mathbb{E}_{x, y} \left[g h(x) + \frac{1}{2} H h(x)^2 + \frac{1}{2}g^2\right] \\
-    &= \underset{h \in \mathcal{H}}{\arg \min } \mathbb{E}_{x, y} \left[\frac{H}{2} \left(\frac{g}{H} - h(x)\right)^2 \right]
+    &= \underset{h \in \mathcal{H}}{\arg \min } \mathbb{E}_{x, y} \left[g h(x) + \frac{1}{2} H h(x)^2 + \frac{g^2}{2H}\right] \\
+    &= \underset{h \in \mathcal{H}}{\arg \min } \mathbb{E}_{x, y} \left[\frac{H}{2} \left(h(x) + \frac{g}{H}\right)^2 \right]
 \end{align}
 $$
 
@@ -575,9 +577,9 @@ $$
 \begin{array}{l}
 F_0(x) = \underset{a}{\arg \min}  \sum_{i=1}^n \mathcal{L}(y_i, a) \\
 \textbf{for } m = 1 \text{ to } M \textbf{ do} \\
-\quad g_i = \nabla_{F_{m-1}} \mathcal{L}(y, F_{m-1}(x)) \text{ for } i = 1, \dots, n \\
-\quad H_i = \nabla^2_{F_{m-1}} \mathcal{L}(y, F_{m-1}(x)) \text{ for } i = 1, \dots, n \\
-\quad h_m = \underset{h \in \mathcal{H}}{\arg \min } \sum_{i=1}^n \frac{H_i}{2}\left(\frac{g_i}{H_i} - h(x_i) \right)^2 \\
+\quad g_i = \nabla_{F_{m-1}(x_i)} \mathcal{L}(y_i, F_{m-1}(x_i)) \text{ for } i = 1, \dots, n \\
+\quad H_i = \nabla^2_{F_{m-1}(x_i)} \mathcal{L}(y_i, F_{m-1}(x_i)) \text{ for } i = 1, \dots, n \\
+\quad h_m = \underset{h \in \mathcal{H}}{\arg \min } \sum_{i=1}^n \frac{H_i}{2}\left(h(x_i) + \frac{g_i}{H_i} \right)^2 \\
 \quad F_m(x) = F_{m-1}(x) + h_m(x) \\
 \textbf{end for} \\
 \textbf{return } F_M(x)
@@ -586,13 +588,13 @@ $$
 
 ### Weighted Quantile Sketch
 
-For tree building, XGBoost uses an approximate solution that shares some similarities with [Histogram Gradient Boosting](#histogram-gradient-boosting). The main goal is to reduce the time needed to find the optimal split. Consider the multi-set $$\mathcal{D}_k = \{(x_{1,k}, H_1), (x_{2,k}, H_2), \ldots, (x_{n,k}, H_n)\}$$, where $x_{i,k}$ is the $i$'th feature value of the $k$'th feature and $H_i$ is equation $$\ref{math_F_2}$$ evaluated at point $x_i$. We will define the following rank function:
+For tree building, XGBoost uses an approximate solution that shares some similarities with [Histogram Gradient Boosting](#histogram-gradient-boosting). The main goal is to reduce the time needed to find the optimal split. Consider the multi-set $$\mathcal{D}_k = \{(x_{1,k}, H_1), (x_{2,k}, H_2), \ldots, (x_{n,k}, H_n)\}$$, where $x_{i,k}$ is the $i$'th feature value of the $k$'th feature and $H_i$ is equation $$\ref{math_res_2H}$$ evaluated at point $x_i$. We will define the following rank function:
 
 $$
 r_k(z) = \frac{1}{\sum_{(x,H) \in \mathcal{D}_k} H} \sum_{(x, H) \in \mathcal{D}_k, x < z} H
 $$
 
-Intuitively, this ranking function can be interpreted as the data points weighted by $H_i$. This happens in equation $$\ref{math_h_2}$$ as well, which is nothing else but a weighted sum of the squared loss with labels $\frac{g_i}{H_i}$ and weights $H_i$.
+Intuitively, this ranking function can be interpreted as the data points weighted by $H_i$. This happens in equation $$\ref{math_h_2}$$ as well, which is nothing else but a weighted sum of the squared loss with targets $-\frac{g_i}{H_i}$ and weights $H_i$.
 
 A candidate split for $\epsilon > 0$ of the $k$'th feature is defined as the data points $$\{s_{k,1}, \dots, s_{k,l}\}$$, such that
 

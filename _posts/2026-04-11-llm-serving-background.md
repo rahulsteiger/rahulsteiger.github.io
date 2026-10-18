@@ -266,6 +266,8 @@ The emergence of tightly coupled heterogeneous GPU/CPU architectures — often r
 
 **Oneiros** <d-cite key="li2025oneiros"></d-cite> takes a different approach by observing that model parameters remain constant during inference while KV cache is dynamically updated. Rather than swapping KV cache between CPU and GPU, Oneiros remaps memory allocated to model parameters for KV cache use. When remapped parameters are needed for computation, they are fetched from CPU memory, with transfers overlapped with layer execution. Evaluated on GH200, Oneiros reduces tail time-between-tokens latency by 44.8–82.5% and increases throughput by 6.6–86.7% compared to vLLM. However, Oneiros lacks support for prefix caching, and inspection of its source code reveals that CUDA graphs are disabled by default to enable dynamic parameter remapping <d-cite key="oneiros_source"></d-cite>. During periods of low traffic, this design choice incurs significant performance overhead due to increased kernel launch latency.
 
+<a id="what-s-next"></a>
+
 ## What's Next
 
 This post covered the essential background for understanding LLM serving and the memory challenges that motivate offloading. In the [next post](/notes/2026/vllm-characterization/), I will present our characterization of vLLM on the GH200, including bandwidth microbenchmarks, the impact of CUDA graphs, and why existing offloading mechanisms fall short. In the [final post](/notes/2026/llm-serving-dynamic-offloading/), I will present our dynamic parameter offloading system and its evaluation.
