@@ -18,6 +18,6 @@ selected_papers: False # includes a list of papers marked as "selected={true}"
 social: true # includes social icons at the bottom of the page
 ---
 
-I recently completed my MSc in Data Science at ETH Zurich. My thesis, at the [Efficient Architectures and Systems Lab](https://systems.ethz.ch/research/easl.html), focused on optimizing large-scale LLM serving on the Alps supercomputer (GH200 Grace Hopper). Along the way I contributed a [50× speedup for multimodal image cache lookups to vLLM](https://github.com/vllm-project/vllm/pull/29621).
+I am a Deep Learning Engineer at NVIDIA. You can find some of my work on [GitHub](https://github.com/rahul-steiger-nv).
 
-Previously: Applied Research Intern at Thomson Reuters Labs, Research Intern at OIST, exchange at NUS, and BSc in Computer Science at ETH, where I competed with [Team RACKlette](https://racklette.ethz.ch/) in international student cluster competitions.
+I studied Data Science and Computer Science at ETH Zurich, with a master's thesis on efficient LLM serving. Along the way, I worked at Thomson Reuters Labs and OIST, studied at NUS, and competed with [Team RACKlette](https://racklette.ethz.ch/) in student cluster competitions.

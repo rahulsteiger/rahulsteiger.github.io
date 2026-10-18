@@ -11,6 +11,7 @@
 # facebook_id: # your facebook id
 # flickr_id: # your flickr id
 github_username: imagoodfella # your GitHub user name
+github_work_username: rahul-steiger-nv
 # gitlab_username: # your GitLab user name
 # ieee_id: # your ieeexplore.ieee.org/author/id
 # inspirehep_id: 1010907 # Inspire HEP author ID
@@ -30,7 +31,7 @@ linkedin_username: rahul-steiger-b22bb01a9 # your LinkedIn user name
 # quora_username: # your Quora username
 # research_gate_profile: # your profile on ResearchGate
 # rss_icon: true # set to true to show the RSS icon
-# scholar_userid: dM8aIcgAAAAJ # your Google Scholar ID
+scholar_userid: dM8aIcgAAAAJ # your Google Scholar ID
 # scopus_id: # your profile on Scopus
 # semanticscholar_id: # your Semantic Scholar ID
 # spotify_id: # your spotify id

@@ -3,7 +3,7 @@
     <div class="container mt-0">Rahul Steiger &copy; {{ site.time | date: '%Y' }}</div>
   </footer>
 {% else %}
-  <footer class="sticky-bottom mt-5" role="contentinfo">
+  <footer class="sticky-bottom {% if page.layout == 'about' %}about-footer{% else %}mt-5{% endif %}" role="contentinfo">
     {% if site.newsletter.enabled %}
       {% include newsletter.liquid %}
     {% endif %}
