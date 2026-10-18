@@ -1,0 +1,511 @@
+---
+layout: distill
+date: 2026-10-18
+title: "Dynamic Parameter Offloading for LLM Serving"
+description: "Designing adaptive offloading for vLLM.<br>Part 3 of 3 from my Master's thesis at ETH Zurich."
+permalink: /notes/2026/llm-serving-dynamic-offloading/
+tags: llm-serving vllm gh200 offloading kv-cache cuda-graphs
+giscus_comments: false
+featured: false
+
+authors:
+  - name: Rahul Steiger
+    affiliations:
+      name: ETH Zurich
+  - name: Foteini Strati
+    affiliations:
+      name: ETH Zurich
+  - name: Xiaozhe Yao
+    affiliations:
+      name: ETH Zurich
+  - name: Prof. Ana Klimovic
+    affiliations:
+      name: ETH Zurich
+
+bibliography: llm-serving-dynamic-offloading.bib
+
+toc:
+  - name: "Introduction"
+  - name: "Design"
+    subsections:
+      - name: "Overview"
+      - name: "The KV Cache and Offloading Tradeoff"
+      - name: "Asynchronous Parameter Offloading"
+      - name: "Dynamic Memory Management"
+      - name: "Offloading Policy"
+      - name: "Limitations"
+      - name: "Implementation Summary"
+  - name: "Evaluation"
+    subsections:
+      - name: "Baselines"
+      - name: "Experimental Setup"
+      - name: "Microbenchmarks"
+      - name: "End-to-End Serving Performance"
+      - name: "Dynamic Policy Behavior"
+      - name: "Prefix Caching with Offloading"
+  - name: "Conclusion"
+    subsections:
+      - name: "Discussion"
+      - name: "Future Work"
+  - name: "Appendix A: Low RPS Evaluation"
+  - name: "Appendix B: High RPS Evaluation"
+---
+
+## Introduction
+
+[Part 1]({{ '/notes/2026/llm-serving-background/' | relative_url }}) introduced the memory constraints in LLM serving. [Part 2]({{ '/notes/2026/vllm-characterization/' | relative_url }}) examined vLLM on the GH200 and motivated three requirements for parameter offloading: asynchronous prefetching, compatibility with CUDA graphs, and adaptation to changing workloads.
+
+In this final post, we describe our dynamic parameter offloading system, implemented in vLLM <d-cite key="kwon2023efficient"></d-cite>, and evaluate its performance and limitations.
+
+<a id="sec-design"></a>
+
+## Design
+
+This section presents the design of a serving system that dynamically offloads model parameters from GPU HBM to CPU memory on the GH200, repurposing the freed memory for KV cache to support larger batch sizes. Offloaded parameters are stored in contiguous CPU tensors and asynchronously prefetched to the GPU ahead of execution, exploiting the GH200's high CPU to GPU bandwidth to overlap data movement with computation. Unlike static offloading strategies, the system continuously adjusts the degree of offloading at runtime based on current KV cache pressure and estimated iteration latency, aiming to maximize overall throughput. We first motivate the core tradeoff between offloading overhead and KV cache capacity, then describe the mechanisms for asynchronous parameter transfer, dynamic memory management, and the policy that drives offloading decisions.
+
+### Overview
+
+The system is implemented within vLLM's V1 engine and introduces three components: an OffloadManager that decides how many layers to offload based on KV cache pressure and estimated iteration latency, a dynamic KV cache queue that adjusts available KV cache capacity at runtime as the offloading configuration changes, and a context manager that handles asynchronous prefetching and GPU memory management for offloaded parameters. At each scheduling step, the OffloadManager evaluates whether to adjust the current offloading level, and the scheduler executes the new configuration in the following iteration.
+
+<a id="sec-kv-cache-tradeoff"></a>
+
+### The KV Cache and Offloading Tradeoff
+
+When GPU memory already suffices for the KV cache, offloading model parameters to CPU is pure overhead. Under higher load, offloading frees GPU memory for additional concurrent requests. However, the throughput gain is not monotonic in the number of offloaded layers: each layer freed provides a fixed amount of KV cache capacity, but transfer overhead grows with each additional layer, and beyond a certain batch size the GPU becomes compute-bound regardless. The optimal offloading depth therefore depends on the current workload, which shifts as request rates and sequence lengths change at runtime.
+
+Existing offloading systems adjust this balance dynamically but use transfer-hiding as the stopping criterion. Oneiros <d-cite key="li2025oneiros"></d-cite> offloads model layers to CPU and monitors GPU computation time, capping the number of offloaded layers so that parameter transfers complete within each iteration. Pie <d-cite key="xu2024pie"></d-cite> offloads KV cache rather than parameters, incrementally moving KV cache blocks to CPU memory until swap latency is about to exceed computation latency. Despite targeting different data, both systems constrain offloading to hide transfer time behind computation. This is overly conservative: even when transfers exceed computation time, the additional KV cache capacity can enable sufficiently larger batches that improve the overall throughput.
+
+To determine how many layers to offload, we monitor estimated decode throughput. We use KV cache capacity divided by iteration time as a proxy for tokens per second. KV cache capacity bounds the number of concurrent requests, and each request generates one token per decode iteration, so this ratio approximates the system's effective throughput. We continue increasing offloading as long as the larger batch size enabled by the additional memory outweighs the overhead of longer iteration times.
+
+### Asynchronous Parameter Offloading
+
+We offload model parameters rather than KV cache for two reasons rooted in the GH200's memory-system characteristics ([Memory System Performance in Part 2]({{ '/notes/2026/vllm-characterization/#memory-system-performance' | relative_url }})).
+
+First, parameters are read-only during inference. Once a layer's weights have been copied to CPU memory, they never need to be written back, so every subsequent transfer is a CPU to GPU read. This eliminates bidirectional traffic and sidesteps the directional asymmetry of the C2C link, where GPU to CPU bandwidth is notably lower.
+
+Second, the weights of a single transformer layer can be packed into a single contiguous tensor on the CPU side. A single `cudaMemcpyAsync` per layer maximizes the effective transfer size and keeps the copy close to the link's peak throughput, avoiding the overhead of many small, scattered transfers.
+
+#### Layer Placement Strategy
+
+Transformer models execute their layers sequentially, from layer $0$ to layer $N-1$. This highly predictable execution path allows the system to know exactly when a specific layer will be needed. To exploit this predictability, we divide the $N$ total model layers into two distinct groups based on a configurable parameter $k$: we keep $N - 2k$ layers in dedicated GPU memory, and we offload the remaining $2k$ layers to pinned CPU memory.
+
+For the $2k$ offloaded layers, the system allocates $k$ shared GPU memory regions. The offloaded layers are organized into $k$ distinct pairs, with each pair sharing a single GPU memory region. For the even-layer models considered here, we maximize the available prefetch window by pairing layers separated by $N/2$ positions in the execution order. This means that layer $i$ is paired with layer $i + N/2$ for $i=0, \ldots, k-1$. [Figure 1](#fig-layer-placement) illustrates this configuration for a model with $N=8$ layers and an offloading depth of $k=2$.
+
+<div id="fig-layer-placement" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/layer_placement.png" class="img-fluid rounded z-depth-1" alt="Figure 1: layer placement" %}
+  </div>
+</div>
+
+<div class="caption">Figure 1: Layer placement with $N=8$ layers and an offloading depth of $k=2$.</div>
+
+During the forward pass, when the first layer in a pair completes its computation, the system immediately issues an asynchronous copy to fetch the parameters of the second layer from the CPU into their shared GPU memory region. Because execution is strictly sequential, $N/2-1$ layers run before the second layer is needed, giving the transfer the largest possible time window to complete behind ongoing GPU compute. [Figure 2](#fig-prefetch-schedule) demonstrates an execution timeline that hides the transfer latency with $N=8$ layers and an offloading depth of $k=2$.
+
+<div id="fig-prefetch-schedule" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/prefetch_schedule.png" class="img-fluid rounded z-depth-1" alt="Figure 2: prefetch schedule" %}
+  </div>
+</div>
+
+<div class="caption">Figure 2: Prefetch scheduling with $N=8$ layers and an offloading depth of $k=2$.</div>
+
+This strategy frees GPU memory equivalent to $k$ layers. The system can scale this offloading depth up to a maximum of $k = \lfloor N/2 \rfloor$. For an even number of equally sized layers, this pairs all layers and reclaims half of their parameter memory for the KV cache.
+
+#### Transfer Mechanism
+
+Offloaded layers are transferred from their pinned CPU tensors into the shared GPU memory regions on dedicated CUDA streams. These streams operate independently from the main compute stream. Each transfer is issued concurrently with the execution of the preceding layer. The system synchronizes these parallel streams using CUDA events. This strict synchronization guarantees that the parameters for an offloaded layer are fully resident on the GPU before its forward pass begins.
+
+The synchronization points between the transfer and compute streams are implemented as custom operations within the piecewise CUDA graph execution of vLLM. This architecture natively supports inserting uncaptured operations between graph segments. By handling synchronization between the segments rather than inside them, the system completely avoids the severe latency penalty of triggering new graph captures whenever the dynamic offloading level changes.
+
+### Dynamic Memory Management
+
+Changing the offloading level at runtime requires reallocating GPU memory between model parameters and KV cache. However, CUDA graphs capture fixed virtual memory addresses at record time. Any reallocation that changes the virtual addresses of weight or KV cache tensors would invalidate all recorded graphs, forcing expensive re-captures, which is infeasible while serving requests at runtime.
+
+#### Custom Virtual Memory Allocator
+
+To decouple virtual addresses from physical memory backing, we build on KVCached <d-cite key="yu2025prism"></d-cite>, a VMM-based allocator originally designed for managing KV cache tensors. KVCached already provides fragmentation-aware page allocation and a zero page mechanism for CUDA graph compatibility. We generalize its design to support tensors of arbitrary shapes, which is necessary for managing both KV cache blocks and shared GPU memory regions, and extend it with additional operations that allow physical pages to be shared across virtual address ranges.
+
+The allocator reserves large contiguous virtual address ranges at initialization but lazily commits physical pages on demand via CUDA's Virtual Memory Management API. Because virtual addresses are fixed at reservation time and never change, CUDA graphs remain valid even as the physical memory behind those addresses is remapped. To ensure that all virtual addresses remain valid at all times, unmapped regions are backed by a single shared zero page rather than left unaddressed. This guarantees that any GPU access to an unmapped region produces a deterministic zero read instead of a segmentation fault, allowing CUDA graphs to safely reference the full virtual address range regardless of the current physical mapping state.
+
+The allocator exposes page-granularity operations through a `C++/pybind11` extension: `map` and `unmap` commit or release physical pages at specified offsets within a named tensor, replacing released mappings with the zero page. `map_pages_to_tensor` maps physical pages from one virtual tensor onto another, allowing both tensors to reference the same physical memory. For example, this enables the system to remap model parameter pages onto the shared memory regions or resize the KV cache tensor without any data copies or changes to virtual addresses.
+
+#### Group-Aligned KV Cache Resizing
+
+Changing the offloading level requires adjusting the number of KV cache blocks available to the scheduler. When layers are offloaded, the freed GPU memory is mapped into the KV cache tensor and the corresponding block IDs are added to the block manager's free list. When layers are reclaimed, the reverse must occur: blocks are removed from the free list and their physical pages are remapped to shared memory regions.
+
+In our implementation, physical memory is mapped at a granularity of 2 MB. Individual KV cache blocks are typically 64 to 256 KB, so a single 2 MB page spans multiple blocks. Freeing an arbitrary block risks deallocating memory that backs a neighboring block still in use. We address this by organizing blocks into groups of contiguous blocks that together align to 2 MB page boundaries.
+
+We adopt vLLM's interleaved KV cache layout <d-cite key="ozeri2026kv"></d-cite>, which stores all layers' KV data in a single contiguous tensor. Because each block now holds KV data for all layers, the effective block size is the product of the number of layers and the per-layer block size. For example, a 32-layer model with 128 KB per layer per block yields 4 MB blocks, which are natively 2 MB-aligned. When the block size is not a multiple of 2 MB, such as 1.5 MB blocks, we group a small number of contiguous blocks until the total reaches a 2 MB boundary (four blocks in this case). Since model dimensions are typically powers of two, most configurations require only one or two blocks per group. [Figure 3](#fig-group-aligned) illustrates a case with 4 blocks per group where Group 1 cannot be deallocated despite 3 of its 4 blocks being free.
+
+<div id="fig-group-aligned" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/group_aligned_kv_cache.png" class="img-fluid rounded z-depth-1" alt="Figure 3: group aligned KV cache" %}
+  </div>
+</div>
+
+<div class="caption">Figure 3: Group-aligned KV cache resizing with 4 blocks per group.</div>
+
+Reclamation operates at group granularity, meaning only groups whose blocks are all free can be unmapped. When the scheduler requests reclamation of a tier (the blocks corresponding to one offloading level), two cases arise. If enough complete groups are already free, they are removed immediately. Otherwise, the system enters a draining state where freed blocks accumulate in a separate reclaim queue as requests complete and release their KV cache. Once sufficient complete groups have accumulated, the reclaim completes and remaining blocks are returned to the main free list. If KV cache pressure rises during draining, for example because the main free list is exhausted, the drain is aborted and all reclaim-queue blocks are spliced back into the main queue, preserving availability. This ensures that resizing never blocks the scheduler and adapts gracefully to shifting demand.
+
+### Offloading Policy
+
+As discussed in [The KV Cache and Offloading Tradeoff](#sec-kv-cache-tradeoff), increasing the offloading depth does not monotonically improve throughput. We observe that even with full compute–transfer overlap, decode latency grows linearly with the number of offloaded layers, while compute-dominated prefill and mixed iterations show a less dramatic slowdown. Because decode iterations are most sensitive to offloading overhead and constitute the majority of iterations under sustained load, the policy uses a decode-throughput proxy: the number of available KV cache blocks divided by average decode iteration time.
+
+#### Modeling Decode Latency
+
+The system must estimate decode latency at each offloading level without relying on extensive offline profiling. We measure forward-pass time every iteration and maintain an average of decode latency per offloading level, filtering out iterations that contain prefill requests (which are identifiable from the scheduler metadata). To bootstrap these estimates, the system starts at the maximum offloading depth and steps down one level at a time during warmup, recording a conservative lower bound on decode latency at each level before settling into steady-state operation.
+
+#### Decision Rule
+
+At each scheduling step, the policy evaluates whether to adjust the current offloading level $k$ based on two signals: KV cache pressure and estimated decode throughput. [Algorithm 1](#alg-offloading-policy) illustrates the policy.
+
+The policy distinguishes two pressure regimes. **High pressure** occurs when requests are waiting in the queue or KV cache utilization exceeds a threshold $\tau_h$. **Low pressure** occurs when no requests are waiting and utilization falls below a lower threshold $\tau_l$. If neither condition holds, the current level is retained.
+
+**Under high pressure.** The policy considers increasing offloading by one level. It calculates the throughput proxy $E[T_k]$ for a given level $k$ as:
+
+$$
+E[T_k] = \frac{C_k}{L_k}
+$$
+
+where $C_k$ is the KV cache capacity in blocks and $L_k$ is the average decode latency at that level. This score has units of blocks per unit time; it is a proxy for comparing offloading levels, not a direct measurement of tokens per second. The system compares the estimates for the current level $k$ and the next level $k+1$. The transition to $k+1$ is enacted only if $E[T_{k+1}] > E[T_k]$.
+
+**Under low pressure.** The policy decreases offloading by one level unconditionally. Since the freed KV cache capacity is currently unutilized, reducing the offloading level safely reduces iteration latency without impacting concurrent request capacity.
+
+<a id="alg-offloading-policy"></a>
+
+**Algorithm 1: Dynamic offloading policy evaluation (per iteration).**
+
+Inputs: current offloading level $k$, cooldown timer $c$, cooldown period $C$, queue length $Q$, KV cache utilization $U$, utilization thresholds $\tau_h$ and $\tau_l$, and maximum offloading level $M = \lfloor N/2 \rfloor$. The capacity and latency arrays contain $C_k$ and $L_k$ for each level.
+
+```text
+# Pseudocode; update both the offloading level and the cooldown state.
+if cooldown_remaining > 0:
+    cooldown_remaining -= 1
+    return level, cooldown_remaining
+
+if queue_length > 0 or kv_utilization > high_threshold:
+    if level < max_level:
+        current_throughput = capacity[level] / decode_latency[level]
+        next_throughput = capacity[level + 1] / decode_latency[level + 1]
+        if next_throughput > current_throughput:
+            level += 1
+            cooldown_remaining = cooldown_period
+elif queue_length == 0 and kv_utilization < low_threshold:
+    if level > 0:
+        level -= 1
+        cooldown_remaining = cooldown_period
+
+return level, cooldown_remaining
+```
+
+After any level change, a cooldown of $C$ iterations suppresses further decisions. This window allows the latency estimates $L_k$ to stabilize at the new configuration before the policy evaluates further transitions.
+
+<a id="sec-limitations"></a>
+
+### Limitations
+
+By design, every byte of GPU memory reclaimed for the KV cache requires two bytes of pinned CPU memory. While this tradeoff enables significantly faster unidirectional transfers, it can become a bottleneck when serving very large models under tight CPU memory constraints. In such cases, a bidirectional approach could help reduce the CPU memory footprint: rather than maintaining copies in both GPU and CPU memory simultaneously, each layer would reside exclusively in one location at any given time, with background transfers migrating layers between devices as needed. Additionally, allowing more than two layers to share a single GPU memory region could further reduce the pinned CPU memory required.
+
+The current implementation relies on vLLM's piecewise CUDA graph execution to insert synchronization and transfer operations between graph segments. While full CUDA graphs would further reduce kernel launch overhead, the performance difference is minimal in practice, as shown in [Execution Optimizations in Part 2]({{ '/notes/2026/vllm-characterization/#execution-optimizations' | relative_url }}). Furthermore, future work could involve full CUDA graphs for the attention computation while only introducing graph splits strictly for the synchronization and transfer operations.
+
+Additionally, while the policy can operate without prior measurements by starting at maximum offloading and adjusting reactively, our experiments use an initial warmup phase that steps through each offloading level to collect decode latency estimates before entering steady state operation. This requires processing a single request at each level, so warmup time scales linearly with the number of offloading levels and depends on how quickly requests arrive. Under moderate load, this adds negligible overhead relative to total serving time, but it delays the system from reaching its optimal configuration until the warmup phase completes.
+
+### Implementation Summary
+
+The system is implemented on top of vLLM v0.13.0, comprising roughly 7,000 LoC: 5,800 lines of Python for vLLM integration and 1,200 lines of `C++` for the custom virtual memory allocator package extending KVCached's VMM API management. The implementation touches three core modules: the V1 scheduler (offloading policy and KV cache resizing), the model executor (prefetch pipeline and graph integration), and worker initialization (memory allocator setup). All changes maintain compatibility with vLLM's existing features including tensor/pipeline parallelism, prefix caching, and chunked prefill.
+
+## Evaluation
+
+### Baselines
+
+As shown in [Execution Optimizations in Part 2]({{ '/notes/2026/vllm-characterization/#execution-optimizations' | relative_url }}), vLLM's existing offloading mechanisms provide limited benefit for throughput: UVA parameter offloading degrades decode latency due to synchronous parameter fetching, while KV cache offloading does not free GPU memory for additional concurrent requests, serving primarily as an extended prefix cache tier. We therefore evaluate our system against default vLLM v0.13.0 as the primary baseline.
+
+We do not compare directly against Pie, Oneiros, or SuperInfer for several reasons. All three systems are built on vLLM's V0 engine, which lacks several optimizations enabled by default in V1, including full CUDA graph support, the optimized contiguous KV cache layout, and improved scheduling — making cross-engine comparisons reflect engine differences rather than offloading strategy differences. Additionally, SuperInfer's implementation is not publicly available. Furthermore, none of the three systems support prefix caching, which is enabled by default in our system and in production vLLM deployments. Disabling prefix caching to match their configuration would penalize our system on workloads with prefix overlap, while enabling it would give us an advantage unrelated to offloading. Instead, we evaluate against vLLM's own offloading mechanisms on the same engine version, pinpointing the exact contribution of our design choices.
+
+<a id="sec-eval-experimental-setup"></a>
+
+### Experimental Setup
+
+Hardware, models, workloads, and metrics are as described in [Experimental Setup in Part 2]({{ '/notes/2026/vllm-characterization/#experimental-setup' | relative_url }}). As in that section, we use an open-loop Poisson workload and report achieved throughput (completed requests divided by the time window length) as the request rate. Request rate ranges are chosen per model to span from low load to beyond saturation, with specific ranges reported in each subsection. Each configuration is run a minimum of five times at each request rate.
+
+Our experiments were conducted on shared cluster nodes, where we occasionally observe runs with virtual memory remapping latency degraded by 2–10 $\times$ compared to the expected baseline, indicating system-level interference unrelated to our system. We identify such runs using a remapping latency threshold determined independently of end-to-end performance metrics: 180 ms for Qwen3-32B and Llama 3.1-70B FP8, and 1000 ms for Mixtral-8x22B. Across all experiments, 6% of Qwen3-32B runs, 9% of Llama 3.1-70B FP8, and 17% of Mixtral-8x22B runs were excluded under this criterion. Beyond remapping latency outliers, we also observed that available GPU memory can vary by 1–2 GB between runs on the same node, depending on cluster-wide usage. This variability contributes to performance differences across repetitions, as reflected by the error bars in our plots.
+
+We limit the maximum offloading depth for Mixtral-8x22B to 40 layers due to out-of-memory errors during dynamic resizing at higher levels. In practice, this constraint does not affect our results: the decode latency overhead at 40 sharded layers is already sufficiently high that the dynamic policy consistently converges to lower offloading levels to maximize throughput.
+
+<a id="sec-microbenchmarks"></a>
+
+### Microbenchmarks
+
+Before evaluating end-to-end serving performance, we validate the core mechanisms of our system in isolation. We measure achieved parameter transfer throughput to verify that our contiguous tensor layout saturates the NVLink-C2C interconnect, and quantify the per-iteration overhead introduced by offloading across decode, prefill, and mixed iterations. These measurements confirm that the building blocks perform as expected and provide context for interpreting the end-to-end results that follow.
+
+#### Achieved Transfer Throughput
+
+[Figure 4](#fig-achieved-transfer-throughput) reports the achieved CPU to GPU transfer throughput for each model. All values are reported per GPU; for Mixtral-8x22B, each layer is sharded across 4 GPUs via tensor parallelism, so the per-GPU transfer throughput reflects the sharded partition.
+
+For a low number of offloaded layers, Qwen3-32B and Llama 3.1-70B achieve a lower transfer throughput compared to higher offloading depths. We suspect that in these cases the CPU to GPU transfer is not the bottleneck, but the HBM accesses during decode iterations which interfere with the transfer. The effect of this interference is less noticeable as we offload more layers since it is amortized by the increased CPU to GPU traffic. This pattern is not visible for Mixtral-8x22B, which we suspect is bound by tensor parallelism communication (e.g., NCCL AllReduce) at low-offload levels rather than HBM memory bandwidth.
+
+<div id="fig-achieved-transfer-throughput" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/achieved_transfer_throughput.png" class="img-fluid rounded z-depth-1" alt="Figure 4: achieved transfer throughput" %}
+  </div>
+</div>
+
+<div class="caption">Figure 4: Achieved transfer throughput versus the number of offloaded layers for Qwen3-32B, Llama 3.1-70B FP8, and Mixtral-8x22B.</div>
+
+All three configurations achieve approximately 392 GB/s at high offloading levels, corresponding to roughly 87% of the peak theoretical unidirectional NVLink-C2C bandwidth of 450 GB/s. Throughput is consistent across models despite varying layer sizes, confirming that all transfers exceed the saturation threshold identified in [Memory System Performance in Part 2]({{ '/notes/2026/vllm-characterization/#memory-system-performance' | relative_url }}).
+
+#### Per-Iteration Offloading Overhead
+
+[Figure 5](#fig-per-iteration-offloading-overhead) reports the per-iteration cost of offloading as a function of the number of offloaded layers. We measure forward pass time and split measurements based on whether the iteration contains prefill requests, as prefill iterations are compute-dominated and provide more opportunity to overlap transfers with computation. The red line shows the KV cache capacity gained at each offloading level.
+
+<div id="fig-per-iteration-offloading-overhead" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/per_iteration_offloading_overhead.png" class="img-fluid rounded z-depth-1" alt="Figure 5: per iteration offloading overhead" %}
+  </div>
+</div>
+
+<div class="caption">Figure 5: Iteration time and available KV cache capacity at varying number of offloaded layers at 10.0, 7.0, and 20.0 RPS target arrival rate for Qwen3-32B, Llama 3.1-70B FP8, and Mixtral-8x22B, respectively.</div>
+
+Across all three models, decode iteration time grows approximately linearly with the number of offloaded layers, while prefill iterations show a much smaller relative increase, confirming that offloading overhead is largely hidden behind prefill computation. For Qwen3-32B, decode time grows from approximately 25 ms to 135 ms at maximum offloading, while KV cache capacity nearly triples from approximately 14 GB to 40 GB. Part of this increase is due to larger batch sizes, as the additional KV cache capacity allows the scheduler to admit more concurrent requests.
+
+The two other models illustrate why offloading overhead varies across configurations. FP8 quantization halves the parameter size per layer, directly reducing the transfer volume per offloaded layer by 2x. However, the compute speedup is smaller because only matrix multiplications benefit from FP8 tensor cores, while operations such as softmax and layer normalization remain in higher precision. This asymmetry means transfer overhead shrinks faster than the compute window available to hide it, which is why Llama 3.1-70B FP8 shows lower offloading decode overhead than Qwen3-32B despite having more layers. Similarly, tensor parallelism adds inter-GPU communication overhead to every iteration, extending the compute window, while each GPU only transfers its sharded partition rather than the full layer. Consequently, Mixtral-8x22B also shows a lower offloading overhead increment.
+
+These results illustrate the core tradeoff that the dynamic policy must navigate: each additional offloading level provides a fixed increment of KV cache capacity at the cost of increasing decode latency. Both quantization and tensor parallelism shift this tradeoff favorably, allowing more layers to be offloaded before the overhead outweighs the capacity gain.
+
+#### Dynamic Resizing Cost
+
+[Table 1](#tab-resizing-cost) reports the cost of a single offloading level transition, which is dominated by remapping virtual memory pages for both KV cache and model parameter tensors. Qwen3-32B and Llama 3.1-70B FP8 complete a transition in approximately 130 ms, consistent with their similar page counts. Mixtral-8x22B requires roughly 7x longer despite having only 5x more pages. Virtual memory remapping operations are issued sequentially across all four GPUs, and the super-linear scaling suggests there may be additional contention on shared driver or interconnect resources. These results highlight the importance of the cooldown mechanism in [Algorithm 1](#alg-offloading-policy) in the dynamic policy: by ensuring the system operates at a stable offloading level for many iterations between transitions, the resizing cost is amortized over a large number of iterations. Reducing this overhead for multi-GPU configurations remains an open challenge.
+
+<a id="tab-resizing-cost"></a>
+
+| Model         | GPUs | Total pages to remap | Resizing cost (ms) |
+| :------------ | ---: | -------------------: | -----------------: |
+| Qwen3-32B     |    1 |                 1888 |     130.29 ± 12.49 |
+| Llama 3.1-70B |    1 |                 1700 |     130.15 ± 24.35 |
+| Mixtral-8x22B |    4 |                 9696 |     939.99 ± 26.23 |
+
+<div class="caption">Table 1: Dynamic KV cache resizing cost per offloading level transition.</div>
+
+<a id="sec-e2e-serving-performance"></a>
+
+### End-to-End Serving Performance
+
+We evaluate end-to-end serving performance across three model configurations, each highlighting a different aspect of the system. Qwen3-32B serves as the baseline single-GPU evaluation, Llama 3.1-70B FP8 demonstrates the interaction between quantization and offloading, and Mixtral-8x22B validates the system under 4-way tensor parallelism. For each model, we sweep request rates from low load to beyond saturation and report median and P99 time to first token (TTFT), end-to-end latency (E2E), and time between tokens (TBT) over 1,800-second runs. We define the saturation point as the maximum request rate achieved by the respective system. As noted in [Experimental Setup](#sec-eval-experimental-setup), shared cluster interference and GPU memory variability between runs contribute to wider error bars at some request rates.
+
+#### Single-GPU (Qwen3-32B)
+
+[Figure 6](#fig-qwen-rps) reports median TTFT, E2E latency, and TBT for Qwen3-32B on ShareGPT across increasing request rates. Default vLLM saturates at approximately 13.5 requests per second, beyond which TTFT and E2E latency rise sharply as requests accumulate in the queue. Our system sustains up to 14.8 requests per second before saturating, a 10% improvement in maximum sustainable throughput. The additional KV cache capacity from dynamic offloading allows the scheduler to admit more concurrent requests, reducing queueing delays. TBT increases moderately at higher request rates due to the offloading overhead during decode iterations, consistent with the per-iteration measurements in [Microbenchmarks](#sec-microbenchmarks). This tradeoff is favorable: the reduction in TTFT and E2E latency significantly outweighs the modest increase in TBT.
+
+<div id="fig-qwen-rps" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_rps_median.png" class="img-fluid rounded z-depth-1" alt="Figure 6: Qwen request-rate median" %}
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_rps_p99.png" class="img-fluid rounded z-depth-1" alt="Figure 6: Qwen request-rate P99" %}
+  </div>
+</div>
+
+<div class="caption">Figure 6: Evaluation of Qwen3-32B at varying request rates on ShareGPT.</div>
+
+At moderate to high request rates (13.0 to 15.0), our system achieves lower P99 TBT than default vLLM despite offloading overhead. At this load, default vLLM begins experiencing preemptions, where evicted requests must recompute their KV cache when rescheduled, causing latency spikes that disproportionately affect tail latency. The additional KV cache capacity from offloading avoids these preemptions, resulting in lower P99 TBT. At higher request rates, the larger batch sizes enabled by offloading increase per-iteration compute, and P99 TBT rises above the baseline.
+
+[Figure 7](#fig-qwen-high-rps-cdf) shows the CDF at a target arrival rate of 14.5, which is above the saturation point of default vLLM. While default vLLM queues most requests for tens of seconds before processing, our system serves the majority of requests almost immediately. E2E latency shows a similar improvement. TBT increases slightly due to offloading overhead, but this is a favorable tradeoff compared to the order-of-magnitude reduction in queueing delay.
+
+<div id="fig-qwen-high-rps-cdf" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_high_rps_cdf.png" class="img-fluid rounded z-depth-1" alt="Figure 7: Qwen high request-rate CDF" %}
+  </div>
+</div>
+
+<div class="caption">Figure 7: CDF of Qwen3-32B on ShareGPT at a target arrival rate of 14.5 RPS.</div>
+
+#### Single-GPU Quantized (Llama 3.1-70B FP8)
+
+[Figure 8](#fig-llama-rps) reports median and P99 latency metrics for Llama 3.1-70B FP8 across request rates. Default vLLM saturates at approximately 8.7 requests per second, while our system sustains up to 10.1 requests per second. As predicted by the microbenchmarks, the reduced per-layer transfer volume from FP8 quantization allows more layers to be offloaded before the overhead outweighs the capacity gain, resulting in a 16% improvement in maximum sustainable throughput compared to 10% for Qwen3-32B.
+
+<div id="fig-llama-rps" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/llama_rps_median.png" class="img-fluid rounded z-depth-1" alt="Figure 8: Llama request-rate median" %}
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/llama_rps_p99.png" class="img-fluid rounded z-depth-1" alt="Figure 8: Llama request-rate P99" %}
+  </div>
+</div>
+
+<div class="caption">Figure 8: Evaluation of Llama 3.1-70B FP8 at varying request rates on ShareGPT.</div>
+
+[Figure 9](#fig-llama-high-rps-cdf) shows the CDF at a target arrival rate of 10.0 RPS, which is above the saturation point of default vLLM. Similarly to Qwen3-32B, our system eliminates most queueing delay while incurring only a modest increase in TBT.
+
+<div id="fig-llama-high-rps-cdf" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/llama_high_rps_cdf.png" class="img-fluid rounded z-depth-1" alt="Figure 9: Llama high request-rate CDF" %}
+  </div>
+</div>
+
+<div class="caption">Figure 9: CDF of Llama 3.1-70B FP8 on ShareGPT at a target arrival rate of 10.0 RPS.</div>
+
+#### Multi-GPU (Mixtral-8x22B, 4-GPU TP)
+
+[Figure 10](#fig-mistral-rps) reports median and P99 latency metrics for Mixtral-8x22B across request rates. Default vLLM saturates at approximately 20.5 requests per second, while our system sustains up to 25.1 requests per second, a 22% improvement in maximum sustainable throughput. As predicted by the microbenchmarks, tensor parallelism extends the per-iteration compute window through inter-GPU communication while reducing the transfer volume per GPU, allowing more layers to be offloaded before the overhead outweighs the capacity gain. This results in a larger throughput improvement compared to the 10% observed for Qwen3-32B.
+
+<div id="fig-mistral-rps" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/mistral_rps_median.png" class="img-fluid rounded z-depth-1" alt="Figure 10: Mixtral request-rate median" %}
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/mistral_rps_p99.png" class="img-fluid rounded z-depth-1" alt="Figure 10: Mixtral request-rate P99" %}
+  </div>
+</div>
+
+<div class="caption">Figure 10: Evaluation of Mixtral-8x22B at varying request rates on ShareGPT.</div>
+
+[Figure 11](#fig-mistral-high-rps-cdf) shows the CDF at a target arrival rate of 25.0 RPS, which is above the saturation point of default vLLM. Our system again eliminates most queueing delay, substantially reducing TTFT and E2E latency. The increase in TBT is more pronounced than for the single-GPU models, which we analyze in detail in [Dynamic Policy Behavior](#sec-dynamic-policy).
+
+<div id="fig-mistral-high-rps-cdf" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/mistral_high_rps_cdf.png" class="img-fluid rounded z-depth-1" alt="Figure 11: Mixtral high request-rate CDF" %}
+  </div>
+</div>
+
+<div class="caption">Figure 11: CDF of Mixtral-8x22B on ShareGPT at a target arrival rate of 25.0 RPS.</div>
+
+<a id="sec-dynamic-policy"></a>
+
+### Dynamic Policy Behavior
+
+The previous sections evaluated aggregate performance across entire runs. Here we examine how the dynamic policy adapts in real time by inspecting time-series traces of offloading level, KV cache utilization, and request queue depth. We present two cases: Llama 3.1-70B, where the policy operates smoothly, and Mixtral-8x22B, where multi-GPU limitations expose current shortcomings. At low request rates, the dynamic policy reduces offloading to a minimal level and our system performs comparably to default vLLM; detailed low request rate results are provided in [Appendix A: Low RPS Evaluation](#app-low-rps).
+
+#### Single-GPU with Aligned KV Cache Blocks
+
+Both Qwen3-32B and Llama 3.1-70B FP8 have 2 MB-aligned KV cache block sizes, allowing the policy to reclaim individual blocks without grouping constraints. Their dynamic behavior is similar. We include the Qwen3-32B trace in [Appendix B: High RPS Evaluation](#app-high-rps) and present Llama 3.1-70B FP8 here as a representative example.
+
+<div id="fig-llama-high-rps-trace" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/llama_high_rps_trace.png" class="img-fluid rounded z-depth-1" alt="Figure 12: Llama high request-rate trace" %}
+  </div>
+</div>
+
+<div class="caption">Figure 12: Trace of Llama 3.1-70B FP8 on ShareGPT at a target arrival rate of 10.0 RPS.</div>
+
+[Figure 12](#fig-llama-high-rps-trace) shows a trace at a target arrival rate of 10.0 RPS. Default vLLM's waiting queue grows continuously, accumulating over 2000 pending requests, confirming this rate exceeds its capacity. Our system keeps the queue near zero throughout. The policy adjusts offloading between 0 and 24 offloaded layers in response to KV cache pressure, increasing offloading when utilization rises and decreasing offloading when it decreases. Despite serving more concurrent requests, the waiting queue remains empty, demonstrating that the throughput gained from larger batch sizes outweighs the offloading overhead.
+
+#### Multi-GPU with Misaligned KV Cache Blocks
+
+Mixtral-8x22B has a per-block KV cache size of 1.75 MB, which does not align to the 2 MB page granularity required by the CUDA VMM API. The system therefore groups 8 contiguous blocks into a single reclaimable unit, meaning all 8 blocks must be free before their backing memory can be remapped. This coarser reclamation granularity makes the policy less reactive: when the policy decides to reduce offloading, it must wait for an entire group to drain before memory can be reclaimed, delaying the transition. Combined with the higher resizing cost observed in the microbenchmarks, this explains the more pronounced TBT increase for Mixtral-8x22B noted in [End-to-End Serving Performance](#sec-e2e-serving-performance).
+
+<div id="fig-mistral-trace-high-rps" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/mistral_high_rps_trace.png" class="img-fluid rounded z-depth-1" alt="Figure 13: Mixtral high request-rate trace" %}
+  </div>
+</div>
+
+<div class="caption">Figure 13: Trace of Mixtral-8x22B on ShareGPT at a target arrival rate of 25.0 RPS.</div>
+
+[Figure 13](#fig-mistral-trace-high-rps) shows a trace of Mixtral-8x22B at a target arrival rate of 25.0 RPS. As with the single-GPU case, default vLLM's queue grows unboundedly while our system keeps it near zero. However, the number of offloaded layers panel reveals a staircase pattern compared to the peaks seen for Llama 3.1-70B FP8. Increasing offloading remains fast, as freed parameter memory can be immediately mapped into the KV cache. Decreasing offloading is more difficult: reducing an offloading level requires waiting for an entire group of 8 blocks to become free, which depends on when in-flight requests complete and release their KV cache. This is visible around 900 seconds, where the policy cannot decrease offloading to adjust to the falling pressure.
+
+### Prefix Caching with Offloading
+
+Prefix caching and parameter offloading are complementary mechanisms that both benefit from expanded KV cache capacity. Prefix caching avoids redundant prefill computation by retaining KV cache entries for shared prefixes, but its effectiveness depends on having sufficient memory to keep these entries resident. Parameter offloading frees GPU memory for KV cache, increasing capacity for both active requests and cached prefix entries. Additionally, vLLM's KV cache offloading connector provides a secondary CPU memory tier for prefix cache entries, enabling evicted entries to be reloaded from CPU memory rather than recomputed. We evaluate how these mechanisms interact on a prefix-heavy workload.
+
+#### Workload
+
+We use the same synthetic document QA workload from [Execution Optimizations in Part 2]({{ '/notes/2026/vllm-characterization/#execution-optimizations' | relative_url }}). The dataset consists of 16 documents of approximately 4,096 tokens each, with 200 questions per document drawn from a set of 10 question templates. Questions are shuffled across documents to simulate interleaved access patterns. Output lengths are sampled uniformly between 50 and 150 tokens. This creates 16 distinct prefix groups competing for cache space, representative of production workloads such as document understanding and retrieval-augmented generation.
+
+#### Results
+
+Similarly to what we described in [Experimental Setup in Part 2]({{ '/notes/2026/vllm-characterization/#experimental-setup' | relative_url }}), we serve requests via a Poisson process at fixed target arrival rates and report the achieved request rate of each system. Additionally, we modify the policy in [Algorithm 1](#alg-offloading-policy) to not decrease offloading when prefix caching is above a fixed user-defined threshold. [Figure 14](#fig-qwen-prefix-rps-check) shows median and P99 latency against achieved request rate for four configurations: standard vLLM, standard vLLM with KV cache offloading <d-cite key="ozeri2026kv"></d-cite>, dynamic offloading, and dynamic offloading with KV cache offloading.
+
+<div id="fig-qwen-prefix-rps-check" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_prefix_rps_median.png" class="img-fluid rounded z-depth-1" alt="Figure 14: Qwen prefix request-rate median" %}
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_prefix_rps_p99.png" class="img-fluid rounded z-depth-1" alt="Figure 14: Qwen prefix request-rate P99" %}
+  </div>
+</div>
+
+<div class="caption">Figure 14: Median (top) and P99 (bottom) E2E latency, TTFT, and TBT versus achieved request rate on the prefix-heavy workload for Qwen3-32B.</div>
+
+Standard vLLM saturates at approximately 2 RPS, at which point GPU KV cache capacity is exhausted by active requests and prefix cache entries are evicted, forcing subsequent requests sharing the same prefix to recompute the full 4,096-token prefill. Enabling KV cache offloading more than doubles this to approximately 5 RPS by preserving evicted prefix entries in CPU memory, though GPU KV cache capacity for active requests remains the bottleneck as arrival rates increase further.
+
+Dynamic parameter offloading improves throughput over standard vLLM, with some runs achieving low latency at request rates up to 10 RPS. However, performance is highly unstable. This indicates that the offloading policy's continuous adjustments to GPU memory allocation cause unpredictable eviction of prefix cache entries. Combining dynamic offloading with KV cache offloading reduces this variance but does not eliminate it. The CPU KV tier preserves some prefix entries that would otherwise be lost when the policy reclaims GPU capacity, resulting in more stable behavior than dynamic offloading alone. Substantial variability remains, however.
+
+The variance at high request rates for the combined configuration reveals a limitation of the current design: the two mechanisms operate independently. The offloading policy adjusts GPU memory allocation based on KV cache utilization and the number of waiting requests, but is unaware which entries in the free KV cache block list contain important prefix data. Similarly, the KV cache offloading connector does not account for dynamic changes in GPU capacity. This lack of coordination can lead to suboptimal decisions. For example, the policy may reclaim KV cache capacity that holds high-value prefix entries without saving them to CPU, triggering unnecessary evictions and recomputations.
+
+## Conclusion
+
+### Discussion
+
+We presented a dynamic parameter offloading system for LLM serving on the NVIDIA GH200 that exploits the NVLink-C2C interconnect to asynchronously prefetch offloaded model parameters while dynamically adjusting the offloading depth at runtime. By building on CUDA's virtual memory management API, the system reallocates GPU memory between model parameters and KV cache without invalidating CUDA graphs, maintaining compatibility with production serving optimizations including prefix caching.
+
+On the ShareGPT workload, we observe throughput improvements of 10% for Qwen3-32B, 16% for Llama 3.1-70B FP8, and 22% for Mixtral-8x22B over default vLLM. Both FP8 quantization and tensor parallelism shift the offloading tradeoff favorably: quantization halves per-layer transfer volume while retaining most of the compute window, and tensor parallelism extends the compute window through inter-GPU communication while reducing per-GPU transfer size. These effects widen the regime in which offloading overhead is outweighed by the capacity gain.
+
+Beyond the limitations discussed in [Limitations](#sec-limitations), our evaluation of Mixtral-8x22B revealed that the CUDA virtual memory 2 MB page alignment requirement limits the dynamic policy's ability to react to fine-grained workload changes. Unlike Qwen3-32B and Llama 3.1-70B FP8, whose KV cache blocks are natively 2 MB-aligned, Mixtral-8x22B requires grouping multiple blocks into reclaimable units, coarsening the granularity at which memory can be redistributed.
+
+On a synthetic prefix-cache-heavy workload, combining vLLM's KV cache offloading with our dynamic parameter offloading yields up to a $2\times$ throughput improvement over standard vLLM, as the expanded GPU KV cache capacity admits more concurrent requests while keeping prefix entries in CPU memory. However, performance variability remains high because the two mechanisms operate independently: the offloading policy does not distinguish between free blocks and blocks holding valuable prefix data, and the KV cache offloading connector is unaware of dynamic GPU capacity changes.
+
+At low request rates, the dynamic policy converges to minimal offloading, and our system performs comparably to default vLLM with negligible overhead. These results show that the policy can reduce unnecessary offloading under the tested low-load conditions. While high levels of offloading increase time between tokens due to longer decode iterations, the resulting capacity enables substantially higher concurrent request throughput. We therefore envision this system as particularly well-suited for absorbing traffic bursts and bridging sudden load increases while additional serving capacity is provisioned.
+
+### Future Work
+
+The 2 MB page alignment used by our allocator is the primary obstacle to fine-grained dynamic memory redistribution. Future work could explore more aggressive block grouping strategies that co-locate KV cache blocks likely to be freed together, for instance by assigning grouped blocks to the same requests. Such data structures introduce scheduling overhead that must be carefully managed. vAttention <d-cite key="vattention"></d-cite> explores driver modifications to support smaller allocation units; our implementation retains the 2 MB granularity. Additionally, adopting full CUDA graphs for the attention computation, while limiting graph splits to synchronization and transfer operations, could further reduce kernel launch overhead.
+
+A natural extension of this work is a unified dynamic memory manager that jointly allocates HBM and CPU memory across model parameters, KV cache, and prefix cache entries based on workload characteristics. Such a system would coordinate offloading decisions with prefix cache eviction, avoiding the suboptimal independent operation observed in our evaluation. Reducing the virtual memory remapping cost for multi-GPU deployments, which currently scales super-linearly with GPU count, is essential for scaling dynamic offloading to larger tensor-parallel configurations. Additionally, multimodal workloads introduce additional memory tradeoffs through image preprocessing and encoder caches, whose retention must be balanced against KV cache capacity and parameters as the mix of text and image traffic varies.
+
+More broadly, the principles underlying this system extend beyond single-model layer offloading. In multi-model pipelines — such as world models <d-cite key="nvidia2025cosmosworldfoundationmodel"></d-cite> or end-to-end autonomous systems that chain perception, planning, and control models <d-cite key="chen2024endtoendautonomousdrivingchallenges"></d-cite> — each model could reside in CPU memory and be transferred to the GPU only when its stage in the pipeline is active. Since these models execute in a fixed sequential order, the same asynchronous prefetching strategy applies at the granularity of entire models rather than individual layers. This model-level offloading is particularly relevant for edge devices and robotics platforms in the physical AI domain, where GPU memory is scarce but the system must host multiple specialized models simultaneously.
+
+## Appendix A: Low RPS Evaluation
+
+<a id="app-low-rps"></a>
+
+<div id="fig-qwen-low-rps-cdf" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_low_rps_cdf.png" class="img-fluid rounded z-depth-1" alt="Figure A1: CDF of Qwen3-32B on ShareGPT at a target arrival rate of 11.0 RPS." %}
+  </div>
+</div>
+
+<div class="caption">Figure A1: CDF of Qwen3-32B on ShareGPT at a target arrival rate of 11.0 RPS.</div>
+
+<div id="fig-qwen3-low-rps-trace" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_low_rps_trace.png" class="img-fluid rounded z-depth-1" alt="Figure A2: Trace of Qwen3-32B on ShareGPT at a target arrival rate of 11.0 RPS." %}
+  </div>
+</div>
+
+<div class="caption">Figure A2: Trace of Qwen3-32B on ShareGPT at a target arrival rate of 11.0 RPS.</div>
+
+<div id="fig-llama-low-rps-cdf" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/llama_low_rps_cdf.png" class="img-fluid rounded z-depth-1" alt="Figure A3: CDF of Llama 3.1-70B FP8 on ShareGPT at a target arrival rate of 7.0 RPS." %}
+  </div>
+</div>
+
+<div class="caption">Figure A3: CDF of Llama 3.1-70B FP8 on ShareGPT at a target arrival rate of 7.0 RPS.</div>
+
+<div id="fig-llama-low-rps-trace" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/llama_low_rps_trace.png" class="img-fluid rounded z-depth-1" alt="Figure A4: Trace of Llama 3.1-70B FP8 on ShareGPT at a target arrival rate of 7.0 RPS." %}
+  </div>
+</div>
+
+<div class="caption">Figure A4: Trace of Llama 3.1-70B FP8 on ShareGPT at a target arrival rate of 7.0 RPS.</div>
+
+<div id="fig-mistral-low-rps-cdf" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/mistral_low_rps_cdf.png" class="img-fluid rounded z-depth-1" alt="Figure A5: CDF of Mixtral-8x22B on ShareGPT at a target arrival rate of 20.0 RPS." %}
+  </div>
+</div>
+
+<div class="caption">Figure A5: CDF of Mixtral-8x22B on ShareGPT at a target arrival rate of 20.0 RPS.</div>
+
+<div id="fig-mistral-low-rps-trace" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/mistral_low_rps_trace.png" class="img-fluid rounded z-depth-1" alt="Figure A6: Trace of Mixtral-8x22B on ShareGPT at a target arrival rate of 20.0 RPS." %}
+  </div>
+</div>
+
+<div class="caption">Figure A6: Trace of Mixtral-8x22B on ShareGPT at a target arrival rate of 20.0 RPS.</div>
+
+## Appendix B: High RPS Evaluation
+
+<a id="app-high-rps"></a>
+
+<div id="fig-qwen3-trace-high-rps" class="row mt-3">
+  <div class="col-sm mt-3 mt-md-0">
+    {% include figure.liquid loading="lazy" path="assets/img/llm-serving-dynamic-offloading/qwen_high_rps_trace.png" class="img-fluid rounded z-depth-1" alt="Figure B1: Trace of Qwen3-32B on ShareGPT at a target arrival rate of 14.5 RPS." %}
+  </div>
+</div>
+
+<div class="caption">Figure B1: Trace of Qwen3-32B on ShareGPT at a target arrival rate of 14.5 RPS.</div>

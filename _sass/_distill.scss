@@ -70,6 +70,7 @@ d-article d-byline a {
 }
 
 d-article {
+  position: relative;
   font-size: 20px !important;
   border-top: none !important;
 
@@ -97,6 +98,14 @@ d-article {
     margin-top: 1.5rem !important;
     margin-bottom: 0.15rem !important;
   }
+
+  h4 {
+    font-size: 22px !important;
+    font-style: normal !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 0.15rem !important;
+  }
+
   p,
   h1,
   h2,
@@ -116,6 +125,10 @@ d-article {
   table th,
   table td {
     border-bottom-color: var(--global-divider-color) !important;
+  }
+  table.table-hover tbody tr:hover {
+    color: var(--global-text-color) !important;
+    background-color: var(--global-code-bg-color) !important;
   }
   a {
     color: var(--global-theme-color) !important;
@@ -153,9 +166,11 @@ d-article {
   }
 
   d-contents {
+    // Keep a long sidebar from stretching the opening article rows.
+    position: absolute;
     align-self: start;
     grid-column: 1 / 4;
-    grid-row: auto / span 4;
+    grid-row: 1;
     justify-self: end;
     margin-top: 3rem !important;
     padding-left: 2em;
@@ -262,6 +277,8 @@ d-appendix {
 @media (max-width: 1500px) {
   d-article {
     d-contents {
+      position: static;
+      grid-row: auto;
       display: block;
       grid-column-start: 2;
       grid-column-end: -2;
