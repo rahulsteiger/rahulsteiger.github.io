@@ -45,7 +45,6 @@ toc:
       - name: Prefix Caching Effectiveness
   - name: Multimodal Inference
   - name: Implications for System Design
-
 ---
 
 ## Introduction

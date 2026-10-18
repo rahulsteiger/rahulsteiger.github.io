@@ -1,2 +1,7 @@
 linkedin.com
 reddit.com
+
+# Unsplash rejects automated requests with HTTP 401.
+^https://unsplash\.com/$
+# Embedded image data is not a fetchable link.
+^data:
