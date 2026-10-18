@@ -1,5 +1,8 @@
 ---
 layout: distill
+permalink: /notes/2025/llamacpp-deepseek/
+archived: true
+nav: false
 title: Running DeepSeek R1 locally
 description: Running inference for DeepSeek R1 with llama.cpp on a 4×A100 node.
 
@@ -60,6 +63,8 @@ _styles: >
     font-size: 16px;
   }
 ---
+
+> **Archived learning note.** This article is preserved for reference and is no longer maintained. [View archived notes]({{ "/notes/archive/" | relative_url }}).
 
 Running these LLMs requires significant computational resources. Fortunately, I have access to HPC hardware thanks to my previous participation in Team RACKlette during my bachelor's. The node I am using for this experiment has 2 `AMD EPYC 7773X 64-Core` CPUs, 4 `NVIDIA A100 80GB` GPUs, and `1 TB` of memory. This is the only reason I am able to play around with LLMs.
 

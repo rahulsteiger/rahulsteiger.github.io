@@ -1,5 +1,8 @@
 ---
 layout: distill
+permalink: /notes/2025/cuda-programming_gemm/
+archived: true
+nav: false
 title: CUDA Programming - Optimizing GEMM
 description: "A work-in-progress attempt at writing a fast GEMM kernel."
 
@@ -63,6 +66,8 @@ _styles: >
     font-size: 16px;
   }
 ---
+
+> **Archived learning note.** This article is preserved for reference and is no longer maintained. [View archived notes]({{ "/notes/archive/" | relative_url }}).
 
 These are my notes for Chapter 7 of the CUDA Programming Course – High-Performance Computing with GPUs on [YouTube](https://www.youtube.com/watch?v=86FAWCzIe_4&t). For all experiments, I will be working on the ALPS cluster, which features a GH200 System.
 

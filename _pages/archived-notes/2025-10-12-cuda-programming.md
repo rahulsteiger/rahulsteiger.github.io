@@ -1,5 +1,8 @@
 ---
 layout: distill
+permalink: /notes/2025/cuda-programming/
+archived: true
+nav: false
 title: CUDA Programming - Fundamentals
 description: "The fundamentals of GPU programming, from first principles."
 
@@ -59,6 +62,8 @@ _styles: >
     font-size: 16px;
   }
 ---
+
+> **Archived learning note.** This article is preserved for reference and is no longer maintained. [View archived notes]({{ "/notes/archive/" | relative_url }}).
 
 These are my notes for the course CUDA Programming Course – High-Performance Computing with GPUs on [YouTube](https://www.youtube.com/watch?v=86FAWCzIe_4&t) Chapters 1-6. The authors made the course code available on [GitHub](https://github.com/Infatoshi/cuda-course). I will be working on the ALPS cluster with a GH200 System.
 

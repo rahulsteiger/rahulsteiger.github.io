@@ -67,4 +67,8 @@ pagination:
 {% include pagination.liquid %}
 {% endif %}
 
+  <div class="notes-archive-link">
+    <a href="{{ "/notes/archive/" | relative_url }}">Archived learning notes <span aria-hidden="true">&rarr;</span></a>
+  </div>
+
 </div>
