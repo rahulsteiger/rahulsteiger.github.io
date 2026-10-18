@@ -95,6 +95,23 @@ $ bundle exec jekyll serve
 
 To see the template running, open your browser and go to `http://localhost:4000`. You should see a copy of the theme's [demo website](https://alshedivat.github.io/al-folio/). Now, feel free to customize the theme however you like. After you are done, remember to **commit** your final changes.
 
+## Build locally without starting a server
+
+The Dockerfile uses Ruby 3.3.5 (matching the deployment workflow) and Bundler 2.6.2
+to install the dependencies recorded in `Gemfile.lock`. It also installs ImageMagick
+and `nbconvert`, which are required to generate responsive images and notebook pages.
+
+```bash
+docker build -t rahulsteiger-site:local .
+docker run --rm --user "$(id -u):$(id -g)" \
+  -e BUNDLE_IGNORE_CONFIG=true \
+  -v "$(pwd -P):/srv/jekyll" \
+  rahulsteiger-site:local bundle exec jekyll build
+```
+
+The production site is generated in `_site/`. `BUNDLE_IGNORE_CONFIG` prevents a
+host machine's local Bundler settings from overriding the gems installed in the image.
+
 ## Deployment
 
 Deploying your website to [GitHub Pages](https://pages.github.com/) is the most popular option.

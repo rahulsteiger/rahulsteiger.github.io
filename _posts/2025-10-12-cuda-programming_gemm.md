@@ -3,7 +3,7 @@ layout: distill
 title: CUDA Programming - Optimizing GEMM
 description: "A work-in-progress attempt at writing a fast GEMM kernel."
 
-tags: CUDA GH200 C++
+tags: CUDA gh200 C++
 giscus_comments: false
 date: 2025-10-12
 featured: false

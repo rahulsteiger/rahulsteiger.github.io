@@ -1,4 +1,4 @@
-FROM ruby:slim
+FROM ruby:3.3.5-slim
 
 # uncomment these if you are having this issue with the build:
 # /usr/local/bundle/gems/jekyll-4.3.4/lib/jekyll/site.rb:509:in `initialize': Permission denied @ rb_sysopen - /srv/jekyll/.jekyll-cache/.gitignore (Errno::EACCES)
@@ -7,7 +7,7 @@ FROM ruby:slim
 # ARG USERID=901
 # ARG USERNAME=jekyll
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 LABEL authors="Amir Pourmand,George Araújo" \
       description="Docker image for al-folio academic template" \
@@ -61,8 +61,8 @@ ADD Gemfile /srv/jekyll
 WORKDIR /srv/jekyll
 
 # install jekyll and dependencies
-RUN gem install --no-document jekyll bundler
-RUN bundle install --no-cache
+RUN gem install --no-document bundler -v 2.6.2
+RUN BUNDLE_FROZEN=true bundle install --no-cache
 
 EXPOSE 8080
 

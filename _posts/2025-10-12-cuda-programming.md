@@ -3,7 +3,7 @@ layout: distill
 title: CUDA Programming - Fundamentals
 description: "The fundamentals of GPU programming, from first principles."
 
-tags: CUDA GH200 C++
+tags: CUDA gh200 C++
 giscus_comments: false
 date: 2025-09-16
 featured: false
