@@ -67,44 +67,11 @@ ninja.data = [{
           window.location.href = "/notes/2025/lsaie-project/";
         
       },
-    },{id: "post-cuda-programming-optimizing-gemm",
-      
-        title: "CUDA Programming - Optimizing GEMM",
-      
-      description: "A work-in-progress attempt at writing a fast GEMM kernel.",
-      section: "Posts",
-      handler: () => {
-        
-          window.location.href = "/notes/2025/cuda-programming_gemm/";
-        
-      },
-    },{id: "post-cuda-programming-fundamentals",
-      
-        title: "CUDA Programming - Fundamentals",
-      
-      description: "The fundamentals of GPU programming, from first principles.",
-      section: "Posts",
-      handler: () => {
-        
-          window.location.href = "/notes/2025/cuda-programming/";
-        
-      },
-    },{id: "post-running-deepseek-r1-locally",
-      
-        title: "Running DeepSeek R1 locally",
-      
-      description: "Running inference for DeepSeek R1 with llama.cpp on a 4×A100 node.",
-      section: "Posts",
-      handler: () => {
-        
-          window.location.href = "/notes/2025/llamacpp-deepseek/";
-        
-      },
     },{id: "post-biased-coin",
       
         title: "Biased Coin",
       
-      description: "A nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me.",
+      description: "An analytical solution to a coin-tossing problem with an unknown bias.",
       section: "Posts",
       handler: () => {
         
