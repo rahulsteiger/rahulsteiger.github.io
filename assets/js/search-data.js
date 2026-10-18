@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-profiling-vllm-on-the-gh200",
+        },{id: "post-dynamic-parameter-offloading-for-llm-serving",
+      
+        title: "Dynamic Parameter Offloading for LLM Serving",
+      
+      description: "Designing adaptive offloading for vLLM.Part 3 of 3 from my Master&#39;s thesis at ETH Zurich.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/notes/2026/llm-serving-dynamic-offloading/";
+        
+      },
+    },{id: "post-profiling-vllm-on-the-gh200",
       
         title: "Profiling vLLM on the GH200",
       
