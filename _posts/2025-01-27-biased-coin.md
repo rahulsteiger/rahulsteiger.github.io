@@ -1,7 +1,7 @@
 ---
 layout: distill
 title: Biased Coin
-description: A nice analytical solution I came up with for a quantitative trading interview question and a valuable life lesson for me.
+description: An analytical solution to a coin-tossing problem with an unknown bias.
 
 tags: coin-tosses probability quantitative-trading
 giscus_comments: false
@@ -39,8 +39,9 @@ toc:
     #   - name: Example Child Subsection 1
     #   - name: Example Child Subsection 2
   - name: Strategy
+  - name: A Useful Property
   - name: Expected Payoff
-  - name: A Valuable Life Lesson
+  - name: A Note on Attribution
 
 # Below is an example of injecting additional post-specific styles.
 # If you use this post as a template, delete this _styles block.
@@ -63,101 +64,122 @@ _styles: >
 
 ## Problem Statement
 
-Suppose $p$ is uniform between $[0, 1]$ and you throw a coin $N$ times with bias $p$. You have to guess at each toss what the face will be. If your guess correctly, you get $1$ dollar, otherwise $-1$ dollar. What is the optimal strategy and the expected payoff in that case?
+A coin's probability of heads, $p$, is drawn once from the uniform distribution on $[0,1]$ and remains fixed. You do not know $p$. Conditional on $p$, the coin tosses are independent.
+
+Before each of $N$ tosses, you predict heads or tails. A correct prediction earns 1 dollar; an incorrect prediction loses 1 dollar. You observe the outcome after every toss. What strategy maximizes your expected total payoff, and what is that expectation?
 
 ## Strategy
 
-Since $p$ is uniform on $[0, 1]$, it does not matter what we guess for the first flip. After a certain number of throws, our best estimate for $p$ is the number of heads divided by the current number of throws. Since we want to maximize the number of correct guess, we predict heads if we have seen more heads and tails if we saw more tails in the previous throws. If we saw an equal number of heads and tails, we just predict randomly.
+Predict whichever outcome has occurred more often so far. If heads and tails are tied, either prediction is equally good; we will choose randomly with equal probability. This includes the first toss, when neither outcome has been observed.
 
-## A useful property
+To see why this is optimal, let $H_n$ be the number of heads in the first $n$ tosses. Under the uniform prior, the probability that the next toss is heads, given $H_n=h$, is
 
-Suppose $X_0, ..., X_n$ are i.i.d uniformly distributed variables on $[0, 1]$. We define
+$$
+q_n(h)
+= \frac{\int_0^1 p\,p^h(1-p)^{n-h}\,dp}
+       {\int_0^1 p^h(1-p)^{n-h}\,dp}
+= \frac{h+1}{n+2}.
+$$
 
-$$Y_i = \begin{cases} 1 & \text{if } X_i < X_0 \\ 0 & \text{if } X_i > X_0 \end{cases}$$
+This is the posterior predictive probability. It differs from the observed fraction $h/n$, but both favor heads exactly when $h>n/2$.
 
-Given $X_0$, we have that $Y_1, \ldots, Y_n$ are conditionally independent of each other. We get that
+Predicting heads gives an expected payoff of $2q_n(h)-1$, while predicting tails gives $1-2q_n(h)$. We therefore choose heads when $h>n/2$ and tails when $h<n/2$. At a tie, $q_n(h)=1/2$, so the expected payoff is zero.
 
-$$P[Y_1 + \ldots + Y_n = k | X_0] = {n \choose k} X_0^k (1 - X_0)^{n - k}$$
+Our predictions do not affect future tosses or which outcomes we observe. Maximizing the expected payoff on each toss therefore also maximizes the expected total payoff.
 
-Consequently,
+## A Useful Property
 
-$$E[Y_1 + \ldots + Y_n = k] = \int_0^1 {n \choose k} x^k (1 - x)^{n - k} \, dx = \frac{1}{n + 1}$$
+Although the tosses are independent conditional on $p$, they are not independent after averaging over the unknown bias. In fact, the number of heads after $n$ tosses is uniform on $\{0,\ldots,n\}$:
 
-**Note:** The event $Y_1 + \ldots + Y_n = k$ is equivalent to saying that if $X_0, \ldots, X_n$ are ordered, then $X_0$ has position $k+1$. This happens with probability $\frac{1}{n + 1}$.
+$$
+\Pr(H_n=h)
+= \int_0^1 {n\choose h}p^h(1-p)^{n-h}\,dp
+= \frac{1}{n+1}.
+$$
+
+There is a useful way to see this without evaluating the integral. Draw $U_0,\ldots,U_n$ independently and uniformly from $[0,1]$. Set $p=U_0$, and call toss $i$ heads if $U_i<U_0$. Conditional on $U_0$, this produces independent tosses with heads probability $p$.
+
+The event $H_n=h$ means that exactly $h$ of the other values lie below $U_0$, so $U_0$ ranks $(h+1)$st among the $n+1$ values. Every rank is equally likely, giving probability $1/(n+1)$.
 
 ## Expected Payoff
 
-Let $X_n$ denote the payoff after the $n$'th toss, and $H$ denote the number of heads we saw until now. If we have $\frac{H}{n} = 0.5$, we will randomly guess, meaning that our overall expected payoff will be $0$. We have that:
-
-$$\mathbb{E}[X_n | p] = \mathbb{E}\left[X_n \bigg | \frac{H}{n} < 0.5, p\right] P\left[\frac{H}{n} < 0.5 | p\right] + \mathbb{E}\left[X_n \bigg | \frac{H}{n} > 0.5, p\right] P\left[\frac{H}{n} > 0.5 | p \right]$$
-
-Since we predict tails if $\frac{H}{n} < 0.5$, we have that
-
-$$\mathbb{E}\left[X_n \bigg | \frac{H}{n} < 0.5, p\right] = (1 - p) \cdot 1 + p \cdot (-1) = 1 - 2p$$
-
-Since we have that $$P\left[\frac{H}{n} < 0.5 \left . \right \vert  p\right] = \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} {n \choose k} p^k (1-p)^{n - k}$$, we get that
+Let $R_{n+1}$ denote the payoff on toss $n+1$, after observing $n$ tosses. Under the optimal strategy,
 
 $$
-\begin{align*}
-   \int_0^{1} 2p \cdot P\left[\frac{H}{n} < 0.5 | p \right] \cdot 1 dp
-    &= 2 \int_0^{1} \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} {n \choose k} p \cdot (1-p)^k p^{n - k} dp \\
-    &= 2 \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} {n \choose k} \int_0^{1} (1-p)^{k} p^{(n + 1 - k)} dp \\
-    &= 2 \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} {n \choose k} \frac{1}{(n + 2) \cdot {n+1 \choose k + 1}} \\
-    &= 2 \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} \frac{k+1}{(n+1)(n+2)} \\
-    &= \frac{(\lfloor \frac{n}{2} \rfloor + 1) (\lfloor \frac{n}{2} \rfloor + 2)}{(n + 1) (n + 2)}
-\end{align*}
+\mathbb{E}[R_{n+1}\mid H_n=h]
+= |2q_n(h)-1|
+= \frac{|2h-n|}{n+2}.
 $$
 
-Furthermore,
+This expression handles ties directly: when $2h=n$, the expected payoff is zero. Averaging over the uniform distribution of $H_n$ gives
 
 $$
-\begin{align*}
-    \int_0^{1} 1 \cdot P\left[\frac{H}{n} < 0.5 | p \right] 1 \cdot dp
-    &= \int_0^{1} \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} \cdot {n \choose k} p^k (1 - p)^{n - k} dp \\
-    &= \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} {n \choose k} \int_0^{1} p^{k} (1 - p)^{(n - k)} dp \\
-    &= \sum_{k=0}^{\lfloor \frac{n}{2} \rfloor} \frac{1}{(n+1)} \\
-    &= \frac{\lfloor \frac{n}{2} \rfloor + 1}{(n + 1)}
-\end{align*}
+a_n := \mathbb{E}[R_{n+1}]
+= \frac{1}{(n+1)(n+2)}\sum_{h=0}^{n}|2h-n|.
+$$
+
+For even $n=2m$, the sum is
+
+$$
+\sum_{h=0}^{2m}|2h-2m|
+= 4\sum_{j=1}^{m}j
+= 2m(m+1).
+$$
+
+For odd $n=2m+1$, it is
+
+$$
+\sum_{h=0}^{2m+1}|2h-(2m+1)|
+= 2\sum_{j=0}^{m}(2j+1)
+= 2(m+1)^2.
 $$
 
 Consequently,
 
 $$
-\begin{align*}
-    \int_0^1 E\left[Y \bigg | \frac{H}{n} < 0.5, p\right] P\left[\frac{H}{n} < 0.5 | p\right] \cdot 1 dp
-    &= \frac{\lfloor \frac{n}{2} \rfloor + 1}{(n + 1)} - \frac{(\lfloor \frac{n}{2} \rfloor + 1) (\lfloor \frac{n}{2} \rfloor + 2)}{(n + 1) (n + 2)} \\
-    &= \frac{(\lfloor \frac{n}{2} \rfloor+1) (n - \lfloor \frac{n}{2} \rfloor)}{(n+1)(n+2)}\\
-    &= \frac{(\lfloor \frac{n}{2} \rfloor+1) (\lceil \frac{n}{2} \rceil)}{(n+1)(n+2)}
-\end{align*}
+a_n =
+\begin{cases}
+\dfrac{n}{2(n+1)}, & n\text{ even},\\[6pt]
+\dfrac{n+1}{2(n+2)}, & n\text{ odd}.
+\end{cases}
 $$
 
-Since the case $\frac{H}{n} > 0.5$ is symmetric, we get that
+In particular, $a_0=0$: the first prediction has no expected advantage. Subsequent expected payoffs come in pairs,
 
 $$
-E[X_n] = 2 \frac{(\lfloor \frac{n}{2} \rfloor+1) (\lceil \frac{n}{2} \rceil)}{(n+1)(n+2)}
+a_{2k-1}=a_{2k}=\frac{k}{2k+1}
+=\frac{1}{2}\left(1-\frac{1}{2k+1}\right),
+\qquad k\geq 1.
 $$
 
-Finally, we have that
+Let $S_N=\sum_{t=1}^{N}R_t$ be the total payoff over $N\geq1$ tosses. By linearity of expectation,
 
 $$
-\begin{align*}
-    E[X]
-    &= \sum_{n=0}^{N-1} E[X_n] \\
-    &= \sum_{n=1}^{N-1} 2 \frac{(\lfloor \frac{n}{2} \rfloor+1) (\lceil \frac{n}{2} \rceil)}{(n+1)(n+2)} \\
-    &= 2 \sum_{n=1, n \text{ odd}}^{N-1} \frac{(n + 1)^2/2^2}{(n+1)(n+2)} + 2 \sum_{n=1, n \text{ even}}^{N-1} \frac{\frac{n + 2}{2} \frac{n}{2}}{(n+1)(n+2)} \\
-    &= \sum_{n=1, n \text{ odd}}^{N-1} \frac{n + 1}{2 (n+2)} + \sum_{n=1, n \text{ even}}^{N-1} \frac{n}{2(n+1)} \\
-    &= \sum_{n=2, n \text{ even}}^{N} \frac{n}{2 (n+1)} + \sum_{n=1, n \text{ even}}^{N-1} \frac{n}{2(n+1)} \\
-    &= \frac{1}{2} \sum_{k=1}^{\lfloor \frac{N}{2} \rfloor} \left[1 - \frac{1}{2k + 1} \right] + \frac{1}{2} \sum_{k=1}^{\lfloor \frac{N-1}{2} \rfloor} \left[1 - \frac{1}{2k + 1} \right]\\
-    &= \frac{N-1}{2} - \frac{1}{2} \sum_{k=1}^{\lfloor \frac{N}{2} \rfloor} \frac{1}{2k + 1} - \frac{1}{2}  \sum_{k=1}^{\lfloor \frac{N-1}{2} \rfloor} \frac{1}{2k + 1}
-\end{align*}
+\begin{aligned}
+\mathbb{E}[S_N]
+&= \sum_{n=0}^{N-1}a_n\\
+&= \frac{1}{2}\sum_{k=1}^{\lfloor N/2\rfloor}
+   \left(1-\frac{1}{2k+1}\right)
+ + \frac{1}{2}\sum_{k=1}^{\lfloor(N-1)/2\rfloor}
+   \left(1-\frac{1}{2k+1}\right)\\
+&= \frac{N-1}{2}
+ - \frac{1}{2}\sum_{k=1}^{\lfloor N/2\rfloor}\frac{1}{2k+1}
+ - \frac{1}{2}\sum_{k=1}^{\lfloor(N-1)/2\rfloor}\frac{1}{2k+1}.
+\end{aligned}
 $$
 
-For $N = 100$, we get that $E[X] \approx 47.55727465647559$.
+Empty sums are zero. As simple checks, one toss has expected payoff $0$, two tosses have expected total payoff $1/3$, and three tosses have expected total payoff $2/3$.
 
-**Note:** I do not believe that it would have been feasible to come up with the closed-form solution during an actual interview.
+For $N=100$, the expected total payoff is approximately **47.56 dollars**. This averages over both the randomly chosen bias and the toss outcomes; it is not a guaranteed profit for any particular coin.
 
-### A Valuable Life Lesson
+As we observe more tosses, the expected payoff per toss approaches $1/2$ dollar. This matches the average payoff if we knew the bias in advance and always chose the more likely outcome:
 
-For the record, I did not receive this question during an interview; rather, I obtained it from a group chat. After coming up with what I believe is an elegant solution, I shared it with a couple of acquaintances. One of those people actually encountered this question in their interview but did not inform the interviewer. While they were unable to come up with this solution during the interview, that person sent an email to the firm submitting my solution as their own work without my permission or giving me credit. This action most likely allowed them to skip an interview stage and propelled them to the final round. It took a lot of willpower not to report that person for plagiarism. However, let me just say that I was not particularly surprised or disappointed when that person did not receive an offer.
+$$
+\int_0^1 |2p-1|\,dp=\frac{1}{2}.
+$$
 
-Happy Ending? ¯\\\_(ツ)\_/¯
+The strategy itself is simple. The extra work is in calculating how much we expect to earn while learning the unknown bias.
+
+## A Note on Attribution
+
+I originally encountered this problem in a group chat. After sharing my solution, someone submitted it in an interview process without crediting me. That experience made me more thoughtful about attribution when sharing work.
