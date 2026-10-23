@@ -23,7 +23,18 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
-        },{id: "post-dynamic-parameter-offloading-for-llm-serving",
+        },{id: "post-inside-the-wan2-2-vae-decoder",
+      
+        title: "Inside the Wan2.2 VAE Decoder",
+      
+      description: "A detailed explanation of the decoder’s architecture and operations.",
+      section: "Posts",
+      handler: () => {
+        
+          window.location.href = "/notes/2026/wan2-2-vae-explained/";
+        
+      },
+    },{id: "post-dynamic-parameter-offloading-for-llm-serving",
       
         title: "Dynamic Parameter Offloading for LLM Serving",
       

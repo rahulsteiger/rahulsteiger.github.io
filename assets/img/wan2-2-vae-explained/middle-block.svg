@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 28 640 732" role="img" aria-labelledby="title desc">
+<title id="title">The Wan2.2 VAE middle block</title>
+<desc id="desc">A residual block, spatial attention, and a second residual block each preserve the feature shape and add their input back through a skip connection. Residual blocks mix local neighborhoods. Attention mixes all spatial positions within one time step.</desc>
+
+<defs>
+<marker id="flow-arrow" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z" fill="#738297"/></marker>
+<marker id="skip-arrow" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8269a6"/></marker>
+</defs>
+<rect y="28" width="640" height="732" rx="14" fill="#fafbfd"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#233247">
+<text x="320" y="58" font-size="19" fill="#617187" text-anchor="middle">Block input/output: 48 × 45 × 80 × 1024</text>
+<path d="M280 84 H536 Q550 84 550 98 V190 Q550 204 536 204 H292" fill="none" stroke="#8269a6" stroke-width="1.7" stroke-linejoin="round" marker-end="url(#skip-arrow)"/>
+<circle cx="280" cy="84" r="2.7" fill="#738297"/>
+<path d="M280 84 V104" stroke="#738297" stroke-width="1.7" marker-end="url(#flow-arrow)"/>
+<rect x="60" y="104" width="440" height="70" rx="10" fill="#fff" stroke="#d7e1eb"/>
+<text x="280" y="131" font-size="21" fill="#315f84" text-anchor="middle">Residual convolution path</text>
+<text x="280" y="157" font-size="19" text-anchor="middle">Two 3 × 3 × 3 causal Conv3D layers</text>
+<path d="M280 174 V192" stroke="#738297" stroke-width="1.7" marker-end="url(#flow-arrow)"/>
+<circle cx="280" cy="204" r="12" fill="#fff" stroke="#8269a6" stroke-width="1.5"/>
+<path d="M275 204 H285 M280 199 V209" stroke="#8269a6" stroke-width="1.5"/>
+<path d="M280 216 V230" stroke="#738297" stroke-width="1.7"/>
+<path d="M280 230 H536 Q550 230 550 244 V536 Q550 550 536 550 H292" fill="none" stroke="#8269a6" stroke-width="1.7" marker-end="url(#skip-arrow)"/>
+<circle cx="280" cy="230" r="2.7" fill="#738297"/>
+<path d="M280 230 V250" stroke="#738297" stroke-width="1.7" marker-end="url(#flow-arrow)"/>
+<rect x="60" y="250" width="440" height="270" rx="10" fill="#f1ebf8" stroke="#bba7d4"/>
+<text x="280" y="277" font-size="23" fill="#705095" text-anchor="middle">Spatial attention</text>
+<text x="280" y="299" font-size="18" fill="#617187" text-anchor="middle">At each time step independently</text>
+<text x="280" y="322" font-size="18" text-anchor="middle">Normalize + 1 × 1 Conv2D → Q / K / V</text>
+<rect x="100" y="334" width="360" height="42" rx="7" fill="#fff" stroke="#c5b2dc"/>
+<text x="280" y="350" font-size="18" fill="#705095" text-anchor="middle">Reshape to sequence</text>
+<text x="280" y="370" font-size="18" text-anchor="middle">45 × 80 × 1024 → 3600 × 1024</text>
+<path d="M280 376 V392" stroke="#738297" stroke-width="1.5" marker-end="url(#flow-arrow)"/>
+<rect x="100" y="392" width="360" height="42" rx="7" fill="#e3d6f1" stroke="#c5b2dc"/>
+<text x="280" y="408" font-size="18" fill="#705095" text-anchor="middle">Attention</text>
+<text x="280" y="428" font-size="18" text-anchor="middle">3600 × 1024</text>
+<path d="M280 434 V450" stroke="#738297" stroke-width="1.5" marker-end="url(#flow-arrow)"/>
+<rect x="100" y="450" width="360" height="42" rx="7" fill="#fff" stroke="#c5b2dc"/>
+<text x="280" y="466" font-size="18" fill="#705095" text-anchor="middle">Reshape to spatial grid</text>
+<text x="280" y="486" font-size="18" text-anchor="middle">3600 × 1024 → 45 × 80 × 1024</text>
+<text x="280" y="512" font-size="18" text-anchor="middle">1 × 1 Conv2D output projection</text>
+<path d="M280 520 V538" stroke="#738297" stroke-width="1.7" marker-end="url(#flow-arrow)"/>
+<circle cx="280" cy="550" r="12" fill="#fff" stroke="#8269a6" stroke-width="1.5"/>
+<path d="M275 550 H285 M280 545 V555" stroke="#8269a6" stroke-width="1.5"/>
+<path d="M280 562 V576" stroke="#738297" stroke-width="1.7"/>
+<g transform="translate(0 170)">
+<path d="M280 406 H536 Q550 406 550 420 V512 Q550 526 536 526 H292" fill="none" stroke="#8269a6" stroke-width="1.7" stroke-linejoin="round" marker-end="url(#skip-arrow)"/>
+<circle cx="280" cy="406" r="2.7" fill="#738297"/>
+<path d="M280 406 V426" stroke="#738297" stroke-width="1.7" marker-end="url(#flow-arrow)"/>
+<rect x="60" y="426" width="440" height="70" rx="10" fill="#fff" stroke="#d7e1eb"/>
+<text x="280" y="453" font-size="21" fill="#315f84" text-anchor="middle">Residual convolution path</text>
+<text x="280" y="479" font-size="19" text-anchor="middle">Two 3 × 3 × 3 causal Conv3D layers</text>
+<path d="M280 496 V514" stroke="#738297" stroke-width="1.7" marker-end="url(#flow-arrow)"/>
+<circle cx="280" cy="526" r="12" fill="#fff" stroke="#8269a6" stroke-width="1.5"/>
+<path d="M275 526 H285 M280 521 V531" stroke="#8269a6" stroke-width="1.5"/>
+<path d="M280 538 V553" stroke="#738297" stroke-width="1.7" marker-end="url(#flow-arrow)"/>
+<text x="320" y="578" font-size="18" fill="#617187" text-anchor="middle">Purple skips carry each input to the + below its block.</text></g></g></svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 164" role="img" aria-labelledby="title desc">
+<title id="title">VAE encoding and reconstruction</title>
+<desc id="desc">From left to right: an image or video, the VAE encoder, latents, the VAE decoder, and the reconstructed image or video.</desc>
+<defs>
+<marker id="arrow" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L7 3.5 L0 7 Z" fill="#738297"/></marker>
+</defs>
+<rect width="1020" height="164" rx="14" fill="#fafbfd"/>
+<g fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)">
+<path d="M194 72 H226"/><path d="M400 72 H432"/>
+<path d="M580 72 H612"/><path d="M786 72 H818"/>
+</g>
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#233247">
+<rect x="20" y="36" width="174" height="72" rx="9" fill="white" stroke="#d7e1eb"/>
+<text x="107" y="67" font-size="22">Image or video</text>
+<text x="107" y="92" font-size="17" fill="#617187">Original pixels</text>
+<rect x="226" y="36" width="174" height="72" rx="9" fill="#f1ebf8" stroke="#bba7d4"/>
+<text x="313" y="80" font-size="22" fill="#705095">VAE encoder</text>
+<text x="313" y="139" font-size="17" fill="#617187">Compress</text>
+<rect x="432" y="36" width="148" height="72" rx="9" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="506" y="80" font-size="22">Latents</text>
+<rect x="612" y="36" width="174" height="72" rx="9" fill="#edf5e8" stroke="#b6cfa7"/>
+<text x="699" y="80" font-size="22" fill="#42682e">VAE decoder</text>
+<text x="699" y="139" font-size="17" fill="#617187">Reconstruct</text>
+<rect x="818" y="36" width="182" height="72" rx="9" fill="white" stroke="#d7e1eb"/>
+<text x="909" y="67" font-size="21">Reconstruction</text>
+<text x="909" y="92" font-size="17" fill="#617187">Approximate pixels</text>
+</g>
+</svg>

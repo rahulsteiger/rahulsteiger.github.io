@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 30 640 728" role="img" aria-labelledby="title desc">
+<title id="title">Residual blocks within the three upsampling stages</title>
+<desc id="desc">Each stage first applies residual blocks, then upsamples. A separate stage skip connection repeats channels and reshapes them to match the output, without learned weights, and is added afterward. The first two stages preserve 1024 channels and expand time and space. The third stage reduces channels to 512 in its residual blocks and expands only space.</desc>
+<defs>
+<marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z" fill="#738297"/></marker>
+<marker id="skip" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z" fill="#8269a6"/></marker>
+</defs><rect y="30" width="640" height="728" rx="14" fill="#fafbfd"/>
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#233247">
+<text x="320" y="60" font-size="17" fill="#617187">Time × height × width × channels</text>
+<text x="230" y="94" font-size="20">48 × 45 × 80 × 1024</text>
+<rect x="30" y="106" width="580" height="202" rx="12" fill="#f3f6fa" stroke="#dce4ed"/>
+<path d="M230 118 H506 Q520 118 520 132 V248 Q520 262 506 262 H242" fill="none" stroke="#8269a6" stroke-width="1.6" marker-end="url(#skip)"/>
+<circle cx="230" cy="118" r="2.6" fill="#738297"/>
+<path d="M230 106 V134" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="50" y="134" width="360" height="49" rx="8" fill="#fff" stroke="#b4c8db"/>
+<text x="230" y="155" font-size="20">Stage 1 · 3 residual blocks</text><text x="230" y="175" font-size="17" fill="#315f84">Channels: 1024 → 1024</text>
+<path d="M230 183 V200" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="50" y="200" width="360" height="38" rx="8" fill="#edf3f9" stroke="#b4c8db"/><text x="230" y="225" font-size="18">Time ×2 (except first) + space ×2</text>
+<rect x="448" y="167" width="144" height="52" rx="8" fill="#f1ebf8" stroke="#bba7d4"/><text x="520" y="188" font-size="16" fill="#705095">Stage skip</text><text x="520" y="209" font-size="16" fill="#705095">Repeat + reshape</text>
+<path d="M230 238 V250" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/><circle cx="230" cy="262" r="12" fill="#fff" stroke="#8269a6"/><path d="M225 262 H235 M230 257 V267" stroke="#8269a6" stroke-width="1.5"/>
+<text x="230" y="296" font-size="20" fill="#315f84">95 × 90 × 160 × 1024</text>
+<path d="M230 302 V320" stroke="#738297" stroke-width="1.6"/>
+<rect x="30" y="320" width="580" height="202" rx="12" fill="#f3f6fa" stroke="#dce4ed"/>
+<path d="M230 332 H506 Q520 332 520 346 V462 Q520 476 506 476 H242" fill="none" stroke="#8269a6" stroke-width="1.6" marker-end="url(#skip)"/>
+<circle cx="230" cy="332" r="2.6" fill="#738297"/>
+<path d="M230 320 V348" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="50" y="348" width="360" height="49" rx="8" fill="#fff" stroke="#b4c8db"/>
+<text x="230" y="369" font-size="20">Stage 2 · 3 residual blocks</text><text x="230" y="389" font-size="17" fill="#315f84">Channels: 1024 → 1024</text>
+<path d="M230 397 V414" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="50" y="414" width="360" height="38" rx="8" fill="#edf3f9" stroke="#b4c8db"/><text x="230" y="439" font-size="18">Time ×2 (except first) + space ×2</text>
+<rect x="448" y="381" width="144" height="52" rx="8" fill="#f1ebf8" stroke="#bba7d4"/><text x="520" y="402" font-size="16" fill="#705095">Stage skip</text><text x="520" y="423" font-size="16" fill="#705095">Repeat + reshape</text>
+<path d="M230 452 V464" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/><circle cx="230" cy="476" r="12" fill="#fff" stroke="#8269a6"/><path d="M225 476 H235 M230 471 V481" stroke="#8269a6" stroke-width="1.5"/>
+<text x="230" y="510" font-size="20" fill="#315f84">189 × 180 × 320 × 1024</text>
+<path d="M230 516 V534" stroke="#738297" stroke-width="1.6"/>
+<rect x="30" y="534" width="580" height="202" rx="12" fill="#f3f6fa" stroke="#dce4ed"/>
+<path d="M230 546 H506 Q520 546 520 560 V676 Q520 690 506 690 H242" fill="none" stroke="#8269a6" stroke-width="1.6" marker-end="url(#skip)"/>
+<circle cx="230" cy="546" r="2.6" fill="#738297"/>
+<path d="M230 534 V562" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="50" y="562" width="360" height="49" rx="8" fill="#fff" stroke="#b4c8db"/>
+<text x="230" y="583" font-size="20">Stage 3 · 3 residual blocks</text><text x="230" y="603" font-size="17" fill="#315f84">Channels: 1024 → 512</text>
+<path d="M230 611 V628" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="50" y="628" width="360" height="38" rx="8" fill="#edf3f9" stroke="#b4c8db"/><text x="230" y="653" font-size="19">Upsample space ×2</text>
+<rect x="448" y="595" width="144" height="52" rx="8" fill="#f1ebf8" stroke="#bba7d4"/><text x="520" y="616" font-size="16" fill="#705095">Stage skip</text><text x="520" y="637" font-size="16" fill="#705095">Repeat + reshape</text>
+<path d="M230 666 V678" stroke="#738297" stroke-width="1.6" marker-end="url(#arrow)"/><circle cx="230" cy="690" r="12" fill="#fff" stroke="#8269a6"/><path d="M225 690 H235 M230 685 V695" stroke="#8269a6" stroke-width="1.5"/>
+<text x="230" y="724" font-size="20" fill="#315f84">189 × 360 × 640 × 512</text>
+</g></svg>

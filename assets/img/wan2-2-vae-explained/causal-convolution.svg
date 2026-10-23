@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 28 840 462" role="img" aria-labelledby="title desc">
+<title id="title">One output of a causal 3D convolution</title>
+<desc id="desc">Three highlighted 3 by 3 spatial neighborhoods at times t minus 2, t minus 1, and t feed a learned weighted sum to produce one output value at time t. Future features are excluded. The convolution combines all input channels, which are omitted from the grids.</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="#527da2"/></marker></defs>
+<rect y="28" width="840" height="462" rx="12" fill="#fafbfd"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#243247">
+<text x="420" y="62" text-anchor="middle" font-size="18" fill="#527da2">3 time steps × 3 rows × 3 columns</text>
+<text x="125" y="105" text-anchor="middle" font-size="21" fill="#243247">t − 2</text>
+<rect x="65" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="89" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="113" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="137" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="161" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="65" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="89" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="113" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="137" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="161" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="65" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="89" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="113" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="137" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="161" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="65" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="89" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="113" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="137" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="161" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="65" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="89" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="113" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="137" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="161" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="89" y="148" width="72" height="72" fill="none" stroke="#477ca9" stroke-width="2"/>
+<circle cx="125" cy="184" r="3" fill="#477ca9"/>
+<path d="M125 252 V286 H315" fill="none" stroke="#527da2" stroke-width="1.8"/>
+<text x="315" y="105" text-anchor="middle" font-size="21" fill="#243247">t − 1</text>
+<rect x="255" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="279" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="303" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="327" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="351" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="255" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="279" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="303" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="327" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="351" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="255" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="279" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="303" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="327" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="351" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="255" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="279" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="303" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="327" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="351" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="255" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="279" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="303" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="327" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="351" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="279" y="148" width="72" height="72" fill="none" stroke="#477ca9" stroke-width="2"/>
+<circle cx="315" cy="184" r="3" fill="#477ca9"/>
+<path d="M315 252 V286 H315" fill="none" stroke="#527da2" stroke-width="1.8"/>
+<text x="505" y="105" text-anchor="middle" font-size="21" fill="#243247">t</text>
+<rect x="445" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="469" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="493" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="517" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="541" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="445" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="469" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="493" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="517" y="148" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="541" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="445" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="469" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="493" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="517" y="172" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="541" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="445" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="469" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="493" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="517" y="196" width="24" height="24" fill="#dcebf8" stroke="#9bb9d2"/>
+<rect x="541" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="445" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="469" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="493" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="517" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="541" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="469" y="148" width="72" height="72" fill="none" stroke="#477ca9" stroke-width="2"/>
+<circle cx="505" cy="184" r="3" fill="#477ca9"/>
+<path d="M505 252 V286 H315" fill="none" stroke="#527da2" stroke-width="1.8"/>
+<text x="715" y="105" text-anchor="middle" font-size="21" fill="#8993a1">t + 1</text>
+<rect x="655" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="679" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="703" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="727" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="751" y="124" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="655" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="679" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="703" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="727" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="751" y="148" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="655" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="679" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="703" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="727" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="751" y="172" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="655" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="679" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="703" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="727" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="751" y="196" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="655" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="679" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="703" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="727" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<rect x="751" y="220" width="24" height="24" fill="#fff" stroke="#e0e5ec"/>
+<text x="715" y="275" text-anchor="middle" font-size="16" fill="#8993a1">Future: not used</text>
+<path d="M610 89 V295" stroke="#ccd3dc" stroke-dasharray="5 5"/>
+<text x="315" y="313" text-anchor="middle" font-size="17" fill="#527da2">A 3 × 3 neighborhood in each slice</text>
+<path d="M315 322 V343" stroke="#527da2" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="160" y="350" width="310" height="48" rx="9" fill="#eaf2e5" stroke="#95af80"/>
+<text x="315" y="380" text-anchor="middle" font-size="18" fill="#243247">Learned weighted sum + bias</text>
+<path d="M478 374 H550" stroke="#527da2" stroke-width="1.8" marker-end="url(#arrow)"/>
+<rect x="563" y="360" width="28" height="28" rx="4" fill="#648a47"/>
+<text x="689" y="369" text-anchor="middle" font-size="18" fill="#243247">One output value</text>
+<text x="689" y="393" text-anchor="middle" font-size="17" fill="#527da2">at (t, h, w)</text>
+<text x="420" y="443" text-anchor="middle" font-size="17" fill="#243247">Each grid is a height × width feature slice.</text>
+<text x="420" y="470" text-anchor="middle" font-size="16" fill="#65758a">Channels omitted: the sum also combines all input channels.</text>
+</g></svg>

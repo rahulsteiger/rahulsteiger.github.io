@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 330" role="img" aria-labelledby="title desc">
+<title id="title">Predicted channels rearranged into two time steps</title>
+<desc id="desc">At one spatial position, the temporal convolution predicts four channel values p, q, r, and s. Reshaping puts p and q into the earlier output time step and r and s into the later output time step, with two channels per step. Values are rearranged, not duplicated. The first input time step bypasses temporal expansion.</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#738297"/></marker>
+</defs>
+<rect width="640" height="330" rx="14" fill="#fafbfd"/>
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#233247">
+<text x="130" y="32" font-size="20">Four predicted channels</text>
+<text x="130" y="57" font-size="16" fill="#617187">All at one spatial position</text>
+<text x="477" y="32" font-size="20">Two output time steps</text>
+<text x="477" y="57" font-size="16" fill="#617187">Two channels per step</text>
+<path d="M186 176 H350" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<text x="268" y="160" font-size="16" fill="#617187">Reshape</text>
+<rect x="82" y="72" width="96" height="206" rx="10" fill="none" stroke="#a8b5c5" stroke-dasharray="4 3"/>
+<rect x="102" y="82" width="56" height="42" rx="6" fill="#f1ebf8" stroke="#bba7d4"/><text x="130" y="111" font-size="26" fill="#705095">p</text>
+<rect x="102" y="130" width="56" height="42" rx="6" fill="#f1ebf8" stroke="#bba7d4"/><text x="130" y="159" font-size="26" fill="#705095">q</text>
+<rect x="102" y="178" width="56" height="42" rx="6" fill="#edf5e8" stroke="#b6cfa7"/><text x="130" y="207" font-size="26" fill="#42682e">r</text>
+<rect x="102" y="226" width="56" height="42" rx="6" fill="#edf5e8" stroke="#b6cfa7"/><text x="130" y="255" font-size="26" fill="#42682e">s</text>
+<rect x="357" y="112" width="96" height="128" rx="10" fill="none" stroke="#a8b5c5" stroke-dasharray="4 3"/>
+<rect x="377" y="122" width="56" height="48" rx="6" fill="#f1ebf8" stroke="#bba7d4"/><text x="405" y="155" font-size="26" fill="#705095">p</text>
+<rect x="377" y="182" width="56" height="48" rx="6" fill="#f1ebf8" stroke="#bba7d4"/><text x="405" y="215" font-size="26" fill="#705095">q</text>
+<text x="405" y="260" font-size="16" fill="#617187">Earlier step</text>
+<rect x="501" y="112" width="96" height="128" rx="10" fill="none" stroke="#a8b5c5" stroke-dasharray="4 3"/>
+<rect x="521" y="122" width="56" height="48" rx="6" fill="#edf5e8" stroke="#b6cfa7"/><text x="549" y="155" font-size="26" fill="#42682e">r</text>
+<rect x="521" y="182" width="56" height="48" rx="6" fill="#edf5e8" stroke="#b6cfa7"/><text x="549" y="215" font-size="26" fill="#42682e">s</text>
+<text x="549" y="260" font-size="16" fill="#617187">Later step</text>
+<text x="320" y="308" font-size="16" fill="#617187">The first input time step is not expanded.</text>
+</g>
+</svg>
