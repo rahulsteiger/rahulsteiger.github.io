@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 414" role="img" aria-labelledby="title desc">
+<title id="title">One channel expands across time and space</title>
+<desc id="desc">For a time step other than the first, one channel value at one input position is repeated into all four positions of a two-by-two patch at each of two consecutive output time steps. The first input time step produces only one patch. The channel count stays unchanged.</desc>
+<defs>
+<marker id="arrow" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#738297"/></marker>
+</defs>
+<rect width="560" height="414" rx="14" fill="#fafbfd"/>
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#233247">
+<text x="100" y="32" font-size="20">One input position</text>
+<text x="100" y="57" font-size="16" fill="#617187">One channel shown</text>
+<text x="410" y="32" font-size="20">Four positions per step</text>
+<text x="410" y="57" font-size="16" fill="#617187">Same channel in both patches</text>
+<rect x="60" y="102" width="80" height="80" rx="10" fill="none" stroke="#a8b5c5" stroke-dasharray="4 3"/>
+<rect x="72" y="114" width="56" height="56" rx="7" fill="#f1ebf8" stroke="#bba7d4"/>
+<text x="100" y="150" font-size="26" fill="#705095">a</text>
+<path d="M150 142 H280" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<text x="215" y="126" font-size="16" fill="#617187">Repeat + reshape</text>
+<rect x="300" y="92" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="325" y="126" font-size="26" fill="#705095">a</text>
+<rect x="350" y="92" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="375" y="126" font-size="26" fill="#705095">a</text>
+<rect x="300" y="142" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="325" y="176" font-size="26" fill="#705095">a</text>
+<rect x="350" y="142" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="375" y="176" font-size="26" fill="#705095">a</text>
+<text x="350" y="222" font-size="16" fill="#617187">Earlier step</text>
+<rect x="430" y="92" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="455" y="126" font-size="26" fill="#705095">a</text>
+<rect x="480" y="92" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="505" y="126" font-size="26" fill="#705095">a</text>
+<rect x="430" y="142" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="455" y="176" font-size="26" fill="#705095">a</text>
+<rect x="480" y="142" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/><text x="505" y="176" font-size="26" fill="#705095">a</text>
+<text x="480" y="222" font-size="16" fill="#617187">Later step</text>
+<path d="M24 246 H536" stroke="#d7e1eb"/>
+<text x="100" y="278" font-size="18">First time step</text>
+<rect x="72" y="308" width="56" height="56" rx="7" fill="#f1ebf8" stroke="#bba7d4"/>
+<text x="100" y="344" font-size="26" fill="#705095">a</text>
+<path d="M150 336 H340" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<text x="245" y="320" font-size="16" fill="#617187">Expand space only</text>
+<rect x="360" y="286" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/>
+<rect x="410" y="286" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/>
+<rect x="360" y="336" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/>
+<rect x="410" y="336" width="50" height="50" fill="#f1ebf8" stroke="#bba7d4"/>
+<text x="385" y="320" font-size="26" fill="#705095">a</text><text x="435" y="320" font-size="26" fill="#705095">a</text>
+<text x="385" y="370" font-size="26" fill="#705095">a</text><text x="435" y="370" font-size="26" fill="#705095">a</text>
+<text x="410" y="278" font-size="18">One output time step</text>
+</g>
+</svg>

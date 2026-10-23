@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 688" role="img" aria-labelledby="title desc">
+<title id="title">Text-to-video generation with the Wan2.2 VAE decoder</title>
+<desc id="desc">A text encoder turns a prompt into embeddings that guide repeated diffusion denoising of latent noise. The resulting video latents pass through the highlighted Wan2.2 VAE decoder to produce 189 RGB frames at 720 by 1280 pixels.</desc>
+<defs>
+<marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z" fill="#738297"/></marker>
+</defs>
+<rect width="640" height="688" rx="14" fill="#fafbfd"/>
+<g fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)">
+<path d="M170 84 V126"/>
+<path d="M170 190 V198"/>
+<path d="M170 222 V232"/>
+<path d="M470 190 V232"/>
+<path d="M540 300 H590 V256 H540" stroke-linejoin="round"/>
+<path d="M320 326 V368"/>
+<path d="M320 432 V474"/>
+<path d="M320 556 V598"/>
+</g>
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#233247">
+<rect x="50" y="28" width="240" height="56" rx="9" fill="white" stroke="#d7e1eb"/>
+<text x="170" y="63" font-size="22">Text prompt</text>
+<rect x="50" y="126" width="240" height="64" rx="9" fill="#f1ebf8" stroke="#bba7d4"/>
+<text x="170" y="165" font-size="22">Text encoder</text>
+<text x="170" y="216" font-size="17" fill="#705095">Prompt embeddings</text>
+<rect x="350" y="126" width="240" height="64" rx="9" fill="white" stroke="#d7e1eb"/>
+<text x="470" y="165" font-size="22">Latent noise</text>
+<rect x="100" y="232" width="440" height="94" rx="10" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="320" y="269" font-size="23">Diffusion model</text>
+<text x="320" y="299" font-size="18" fill="#617187">Repeated denoising steps</text>
+<rect x="100" y="368" width="440" height="64" rx="9" fill="white" stroke="#d7e1eb"/>
+<text x="320" y="395" font-size="22">Generated video latents</text>
+<text x="320" y="421" font-size="18" fill="#617187">48 × 45 × 80 × 48</text>
+<rect x="100" y="474" width="440" height="82" rx="10" fill="#edf5e8" stroke="#b6cfa7" stroke-width="1.5"/>
+<text x="320" y="507" font-size="23" fill="#42682e">Wan2.2 VAE decoder</text>
+<text x="320" y="534" font-size="18" fill="#42682e">Reconstruct pixels from latent features</text>
+<rect x="100" y="598" width="440" height="64" rx="9" fill="white" stroke="#d7e1eb"/>
+<text x="320" y="625" font-size="22">RGB video frames</text>
+<text x="320" y="651" font-size="18" fill="#617187">189 × 720 × 1280 × 3</text>
+</g>
+</svg>

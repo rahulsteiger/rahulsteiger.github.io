@@ -1,0 +1,219 @@
+---
+layout: distill
+title: "Inside the Wan2.2 VAE Decoder"
+description: "A detailed explanation of the decoder’s architecture and operations."
+permalink: /notes/2026/wan2-2-vae-explained/
+tags: video-generation vae wan cosmos3
+giscus_comments: false
+featured: false
+_styles: |
+  .wan-diagram {
+    width: 100%;
+    max-width: 640px;
+    margin: 1rem auto;
+    overflow-x: auto;
+  }
+  .wan-diagram figure {
+    width: 100%;
+    min-width: 600px;
+    margin: 0;
+  }
+  .wan-diagram-wide {
+    max-width: 1020px;
+  }
+  .wan-diagram-wide figure {
+    min-width: 840px;
+  }
+  .wan-diagram-convolution {
+    max-width: 840px;
+  }
+  .wan-diagram-convolution figure {
+    min-width: 760px;
+  }
+  .wan-diagram:focus-visible {
+    outline: 2px solid #705095;
+    outline-offset: 3px;
+  }
+  .wan-mobile-hint {
+    display: none;
+  }
+  @media (max-width: 640px) {
+    .wan-mobile-hint {
+      display: block;
+      font-size: 0.875rem;
+      text-align: center;
+    }
+  }
+
+authors:
+  - name: Rahul Steiger
+    affiliations:
+      name: NVIDIA
+
+toc:
+  - name: Introduction
+    subsections:
+      - name: VAEs in Video Generation
+  - name: Decoder Architecture
+    subsections:
+      - name: Input Projection
+      - name: Residual Blocks and Spatial Attention
+      - name: Temporal and Spatial Upsampling
+      - name: Output Reconstruction
+  - name: References
+---
+
+<!--
+LOCAL DRAFT: companion explainer to accelerating-wan-vae-decoding.md.
+Keep in _drafts while writing. Normal production builds exclude this file.
+Preview with: bundle exec jekyll build --drafts --destination _site-preview
+-->
+
+## Introduction
+
+A **variational autoencoder (VAE)** consists of an encoder and a decoder. The encoder compresses images or videos into latents, while the decoder reconstructs the original input from these latents. Because this compression is lossy, the reconstructed pixels approximate the original input, as illustrated in Figure 1.
+
+<div class="wan-diagram wan-diagram-wide" tabindex="0" role="region" aria-label="Vae overview diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/vae-overview.svg" class="img-fluid rounded" alt="An input image or video passes through the VAE encoder into latents. The VAE decoder reconstructs an approximation of the input from those latents." zoomable=true %}
+</div>
+
+<div class="caption">Figure 1: Encoding into latents and decoding back to pixels.</div>
+
+<p class="wan-mobile-hint">Scroll figures sideways to see the full diagram.</p>
+
+### VAEs in Video Generation
+
+In text-to-video generation, the diffusion model operates in latent space, reducing the computation required compared to generating pixels directly. Starting from noise, it repeatedly denoises the latents conditioned on the text prompt. The **VAE decoder** then converts the resulting latents into RGB frames. As shown in Figure 2, the decoder receives its input from the diffusion model rather than the VAE encoder.
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Video generation diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/video-generation.svg" class="img-fluid rounded" alt="Prompt embeddings guide repeated denoising of latent noise. The generated video latents pass through the highlighted Wan2.2 VAE decoder to produce 189 RGB frames at 720 by 1280 pixels." zoomable=true %}
+</div>
+
+<div class="caption">Figure 2: The VAE decoder turns generated latents into video.</div>
+
+Cosmos3-Nano uses the **Wan2.2 VAE** from Wan2.2-TI2V-5B.
+
+## Decoder Architecture
+
+Figure 3 shows the decoder stages for a 720p video with 189 frames.
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Decoder overview diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/decoder-overview.svg" class="img-fluid rounded" alt="The main Wan2.2 decoder stages and their tensor shapes, from 48 by 45 by 80 latents with 48 channels to 189 RGB frames at 720p." zoomable=true %}
+</div>
+
+<div class="caption">Figure 3: Main decoder stages and output shapes for the 720p example.</div>
+
+### Input Projection
+
+The decoder first reverses the latent normalization and applies a **1 × 1 × 1 Conv3D projection**. At each position, this projection computes a learned linear combination of the 48 input channels to produce 48 output channels. Because the kernel spans only one position, it mixes channels without reading neighboring positions or changing the tensor shape.
+
+A **3 × 3 × 3 causal Conv3D** then expands the channel dimension from **48 to 1,024**, preserving the **48 × 45 × 80** grid. With kernel dimensions ordered as time × height × width, each output combines a 3 × 3 spatial neighborhood from the current and two preceding time steps. Restricting the temporal window to current and past inputs makes the convolution causal. Missing earlier inputs are padded with zeros. Figure 4 illustrates these dependencies.
+
+<div class="wan-diagram wan-diagram-convolution" tabindex="0" role="region" aria-label="Causal convolution diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/causal-convolution.svg" class="img-fluid rounded" alt="A causal 3D convolution reads three-by-three neighborhoods at the current and two earlier feature time steps." zoomable=true %}
+</div>
+
+<div class="caption">Figure 4: Three spatial neighborhoods contribute to one output. Future time steps are excluded.</div>
+
+### Residual Blocks and Spatial Attention
+
+Before upsampling, the decoder applies two residual blocks with spatial attention between them, as shown in Figure 5. These operations preserve the **48 × 45 × 80 × 1024** shape while combining information from neighboring positions through convolutions and across the spatial grid through attention.
+
+Each residual block applies two sequences of RMS normalization, SiLU, and causal Conv3D, then adds the skip connection.
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Middle block diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/middle-block.svg" class="img-fluid rounded" alt="Two residual blocks surround spatial attention. Each adds its input back through a skip connection, and all preserve the feature shape." zoomable=true %}
+</div>
+
+<div class="caption">Figure 5: Residual blocks and spatial attention, each with an input skip connection. Normalization and activation within the residual paths are omitted.</div>
+
+**Spatial attention** operates independently at each time step. After normalization, a **1 × 1 Conv2D** projects the 1,024 input channels into queries, keys, and values, each with 1,024 channels. The **45 × 80** spatial grid is then flattened into **3,600 positions** for attention. The attention output is reshaped back to the grid and projected through a final **1 × 1 Conv2D**, before adding the block’s input through the skip connection.
+
+### Temporal and Spatial Upsampling
+
+Temporal upsampling increases the number of time steps, while spatial upsampling increases height and width at each time step. Both operate on intermediate features, which are not yet RGB frames.
+
+Three stages expand the feature grid from **48 × 45 × 80 × 1024** to **189 × 360 × 640 × 512**. The first two expand time and space, while the third expands only space. Each stage contains residual blocks, upsampling, and a skip connection, as shown in Figure 6.
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Upsampling diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/upsampling.svg" class="img-fluid rounded" alt="Three upsampling stages expand 48 by 45 by 80 features into 189 by 360 by 640 features. The first two stages expand time and space. The third expands only space and reduces channels to 512." zoomable=true %}
+</div>
+
+<div class="caption">Figure 6: Each stage refines features, upsamples, then adds a matching stage skip connection. The residual blocks also have their own internal skip connections, omitted here.</div>
+
+Each stage begins with three residual blocks that preserve the temporal and spatial dimensions. In the third stage, the first block also reduces the channel dimension from **1,024 to 512**, requiring a learned projection on its skip connection. The remaining blocks preserve the channel dimension and therefore use identity skip connections.
+
+**Temporal upsampling** uses a **3 × 1 × 1 causal Conv3D** to predict twice as many channels at each spatial position, providing the values for both output steps. Reshaping separates these values into two time steps, each with the original channel count. For example, with two channels per step:
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Temporal channel reshape diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/temporal-channel-reshape.svg" class="img-fluid rounded" alt="Four predicted channels p, q, r, and s at one spatial position are reshaped into two time steps: p and q in the earlier step, r and s in the later step. Each output step has two channels. The first input step is not expanded." zoomable=true %}
+</div>
+
+<div class="caption">Figure 7: Four predicted channel values rearranged into two time steps.</div>
+
+The two output steps can have different values because the convolution predicts them separately. Since the first input step is not expanded, a stage with T input steps produces **1 + 2(T − 1)** output steps. The two temporal upsampling stages therefore increase the sequence length from **48 → 95 → 189** steps.
+
+**Spatial upsampling** enlarges the feature grid at each time step without changing the number of time steps. Nearest-neighbor resizing copies each feature vector into a **2 × 2 area**, doubling height and width—for example, from **45 × 80 → 90 × 160**. A **3 × 3 Conv2D** then mixes neighboring features within each time step. All three stages perform spatial upsampling, increasing the grid from **45 × 80 → 90 × 160 → 180 × 320 → 360 × 640**. In the first two stages, this follows temporal upsampling.
+
+#### The Repeat-and-Reshape Skip Connection
+
+In addition to the skip connections within individual residual blocks, each stage has a **stage skip connection**, shown in purple in Figure 6. This branch bypasses both the residual blocks and the upsampling operations. To make its output compatible with the main branch, it repeats and rearranges channel values without learned weights. The two branches are then added elementwise.
+
+**Stages 1 and 2: expand time and space.**
+
+At one input position, each channel value `a` is repeated across four spatial positions at each of two consecutive output time steps. This produces two **2 × 2 patches** with the same channel count:
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Channel to time space diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/channel-to-time-space.svg" class="img-fluid rounded" alt="One input channel value a at one spatial position is repeated across two 2 by 2 patches, one at each of two consecutive output time steps. The first input time step produces only one spatial patch, shown separately below." zoomable=true %}
+</div>
+
+<div class="caption">Figure 8: One channel value repeated across spatial positions and time steps.</div>
+
+This operation is applied independently to each of the **1,024 channels**, matching the spatial and temporal expansion of the main branch.
+
+**Stage 3: expand space and halve the channels.**
+
+At each spatial position, the skip connection takes a pair of input channels and maps their values into one output channel’s **2 × 2 patch**. If the two values are `a` and `b`, repeating each value twice fills the patch as follows:
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Channel to space diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/channel-to-space.svg" class="img-fluid rounded" alt="Two input channels at the same position contain a and b. The output is one channel over a 2 by 2 patch, with a repeated across the top row and b across the bottom row." zoomable=true %}
+</div>
+
+<div class="caption">Figure 9: Two channels at one input position mapped into one channel over four output positions.</div>
+
+Each pair of input channels therefore becomes one output channel spread across four spatial positions. This halves the channel count from **1,024 to 512** while doubling height and width. The number of time steps stays unchanged.
+
+Both input values are preserved in the patch, with no averaging or learned weights. The main branch reaches the same output shape through its convolutions and spatial upsampling, allowing the two branches to be added.
+
+### Output Reconstruction
+
+At this point, each position in the **189 × 360 × 640** grid contains 512 feature values. Output reconstruction converts these features into RGB pixels. It first reduces the channel count, then predicts the values for four pixels at each position, and finally arranges those pixels into the full-resolution frames.
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Output reconstruction diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/output-reconstruction.svg" class="img-fluid rounded" alt="Three residual blocks reduce channels from 512 to 256. RMS normalization and SiLU precede a causal Conv3D that predicts 12 channels. Unpacking 2 by 2 RGB patches produces 189 frames at 720 by 1280." zoomable=true %}
+</div>
+
+<div class="caption">Figure 10: Output reconstruction, from decoder features to RGB frames.</div>
+
+The output head applies RMS normalization, SiLU, and a **3 × 3 × 3 causal Conv3D** to predict **12 values at each grid position**: the RGB values for four pixels. **Unpacking** then rearranges the 12 predicted values at each position into a **2 × 2 patch of RGB pixels**, doubling height and width without changing the number of frames.
+
+#### Final Residual Blocks
+
+The final three residual blocks reduce the channel count from **512 to 256**, keeping the number of time steps, height, and width unchanged. The first block performs this reduction in its first convolution and uses a **1 × 1 × 1 Conv3D** on the skip connection to match. The remaining convolutions preserve 256 channels, and the next two blocks use identity skip connections.
+
+<div class="wan-diagram" tabindex="0" role="region" aria-label="Final residual blocks diagram">
+{% include figure.liquid path="assets/img/wan2-2-vae-explained/final-residual-blocks.svg" class="img-fluid rounded" alt="All three final residual blocks expanded. Each has two normalization, SiLU, and causal convolution sequences. The first block reduces 512 channels to 256 and projects its skip connection. The next two preserve 256 channels and use identity skips." zoomable=true %}
+</div>
+
+<div class="caption">Figure 11: The three final residual blocks. Only the first block changes the channel count.</div>
+
+## References
+
+- [Wan2.2 VAE implementation](https://github.com/Wan-Video/Wan2.2/blob/1ea34ff48f87168174e12956e200b1d908b1c5ff/wan/modules/vae2_2.py): decoder architecture, convolutions, attention, upsampling, and repeat-and-reshape skip connections.
+- [Cosmos3-Nano VAE configuration](https://huggingface.co/nvidia/Cosmos3-Nano/blob/main/vae/config.json): the Wan2.2 model configuration used for this article.
+
+<!--
+AUTHOR NOTE: the example uses the public Cosmos3-Nano VAE configuration, not a
+benchmark configuration. Pin source links before publication. The optimization article contains the
+benchmark details and can extend the history diagram for temporal batching.
+-->

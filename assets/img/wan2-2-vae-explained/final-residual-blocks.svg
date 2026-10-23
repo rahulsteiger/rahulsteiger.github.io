@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 1110" role="img" aria-labelledby="title desc">
+<title id="title">The three final residual blocks</title>
+<desc id="desc">Each block has two RMS normalization, SiLU, and causal convolution sequences. Block one reduces 512 channels to 256 in its first convolution and projects its skip connection to 256 channels. Blocks two and three preserve 256 channels and use identity skip connections. All blocks preserve 189 time steps and the 360 by 640 spatial grid.</desc>
+<defs><marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z" fill="#738297"/></marker></defs>
+<rect width="640" height="1110" rx="14" fill="#fafbfd"/>
+<g font-family="Arial, Helvetica, sans-serif" text-anchor="middle" fill="#233247">
+<text x="320" y="34" font-size="21">Input: 189 × 360 × 640 × 512</text>
+<path d="M320 48 V68" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<g transform="translate(0 68)">
+<rect x="30" y="0" width="580" height="308" rx="10" fill="#f4f7fb" stroke="#b4c8db"/>
+<text x="320" y="30" font-size="22">Residual block 1 · 512 → 256 channels</text>
+<path d="M320 42 V52 H210 V70" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<path d="M320 52 H495 V117" fill="none" stroke="#9574ad" stroke-width="1.7" marker-end="url(#arrow)"/>
+<rect x="55" y="70" width="310" height="64" rx="9" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="210" y="95" font-size="18">RMS norm + SiLU</text>
+<text x="210" y="119" font-size="17">3 × 3 × 3 causal Conv3D · 512 → 256</text>
+<path d="M210 134 V155" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<rect x="55" y="155" width="310" height="64" rx="9" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="210" y="180" font-size="18">RMS norm + SiLU</text>
+<text x="210" y="204" font-size="17">3 × 3 × 3 causal Conv3D · 256 → 256</text>
+<rect x="395" y="117" width="200" height="72" rx="9" fill="#f1eaf8" stroke="#bda7cf"/>
+<text x="495" y="138" font-size="18" fill="#76538f">Skip projection</text>
+<text x="495" y="161" font-size="17">1 × 1 × 1 Conv3D</text>
+<text x="495" y="181" font-size="17">512 → 256</text>
+<path d="M210 219 V264 H302" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<path d="M495 189 V264 H338" fill="none" stroke="#9574ad" stroke-width="1.7" marker-end="url(#arrow)"/>
+<circle cx="320" cy="264" r="18" fill="white" stroke="#9574ad"/>
+<text x="320" y="271" font-size="24">+</text>
+</g>
+<path d="M320 350 V398" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<g transform="translate(0 398)">
+<rect x="30" y="0" width="580" height="308" rx="10" fill="#f4f7fb" stroke="#b4c8db"/>
+<text x="320" y="30" font-size="22">Residual block 2 · 256 → 256 channels</text>
+<path d="M320 42 V52 H210 V70" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<path d="M320 52 H495 V117" fill="none" stroke="#9574ad" stroke-width="1.7" marker-end="url(#arrow)"/>
+<rect x="55" y="70" width="310" height="64" rx="9" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="210" y="95" font-size="18">RMS norm + SiLU</text>
+<text x="210" y="119" font-size="17">3 × 3 × 3 causal Conv3D · 256 → 256</text>
+<path d="M210 134 V155" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<rect x="55" y="155" width="310" height="64" rx="9" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="210" y="180" font-size="18">RMS norm + SiLU</text>
+<text x="210" y="204" font-size="17">3 × 3 × 3 causal Conv3D · 256 → 256</text>
+<rect x="395" y="117" width="200" height="72" rx="9" fill="#f1eaf8" stroke="#bda7cf"/>
+<text x="495" y="147" font-size="18" fill="#76538f">Identity skip</text>
+<text x="495" y="172" font-size="16">Input unchanged</text>
+<path d="M210 219 V264 H302" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<path d="M495 189 V264 H338" fill="none" stroke="#9574ad" stroke-width="1.7" marker-end="url(#arrow)"/>
+<circle cx="320" cy="264" r="18" fill="white" stroke="#9574ad"/>
+<text x="320" y="271" font-size="24">+</text>
+</g>
+<path d="M320 680 V728" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<g transform="translate(0 728)">
+<rect x="30" y="0" width="580" height="308" rx="10" fill="#f4f7fb" stroke="#b4c8db"/>
+<text x="320" y="30" font-size="22">Residual block 3 · 256 → 256 channels</text>
+<path d="M320 42 V52 H210 V70" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<path d="M320 52 H495 V117" fill="none" stroke="#9574ad" stroke-width="1.7" marker-end="url(#arrow)"/>
+<rect x="55" y="70" width="310" height="64" rx="9" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="210" y="95" font-size="18">RMS norm + SiLU</text>
+<text x="210" y="119" font-size="17">3 × 3 × 3 causal Conv3D · 256 → 256</text>
+<path d="M210 134 V155" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<rect x="55" y="155" width="310" height="64" rx="9" fill="#edf3f9" stroke="#b4c8db"/>
+<text x="210" y="180" font-size="18">RMS norm + SiLU</text>
+<text x="210" y="204" font-size="17">3 × 3 × 3 causal Conv3D · 256 → 256</text>
+<rect x="395" y="117" width="200" height="72" rx="9" fill="#f1eaf8" stroke="#bda7cf"/>
+<text x="495" y="147" font-size="18" fill="#76538f">Identity skip</text>
+<text x="495" y="172" font-size="16">Input unchanged</text>
+<path d="M210 219 V264 H302" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<path d="M495 189 V264 H338" fill="none" stroke="#9574ad" stroke-width="1.7" marker-end="url(#arrow)"/>
+<circle cx="320" cy="264" r="18" fill="white" stroke="#9574ad"/>
+<text x="320" y="271" font-size="24">+</text>
+</g>
+<path d="M320 1010 V1058" fill="none" stroke="#738297" stroke-width="1.7" marker-end="url(#arrow)"/>
+<text x="320" y="1086" font-size="21" fill="#315f84">Output: 189 × 360 × 640 × 256</text>
+</g></svg>
