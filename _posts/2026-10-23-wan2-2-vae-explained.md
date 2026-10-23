@@ -1,5 +1,6 @@
 ---
 layout: distill
+date: 2026-10-23
 title: "Inside the Wan2.2 VAE Decoder"
 description: "A detailed explanation of the decoder’s architecture and operations."
 permalink: /notes/2026/wan2-2-vae-explained/
@@ -62,12 +63,6 @@ toc:
       - name: Output Reconstruction
   - name: References
 ---
-
-<!--
-LOCAL DRAFT: companion explainer to accelerating-wan-vae-decoding.md.
-Keep in _drafts while writing. Normal production builds exclude this file.
-Preview with: bundle exec jekyll build --drafts --destination _site-preview
--->
 
 ## Introduction
 
@@ -211,9 +206,3 @@ The final three residual blocks reduce the channel count from **512 to 256**, ke
 
 - [Wan2.2 VAE implementation](https://github.com/Wan-Video/Wan2.2/blob/1ea34ff48f87168174e12956e200b1d908b1c5ff/wan/modules/vae2_2.py): decoder architecture, convolutions, attention, upsampling, and repeat-and-reshape skip connections.
 - [Cosmos3-Nano VAE configuration](https://huggingface.co/nvidia/Cosmos3-Nano/blob/main/vae/config.json): the Wan2.2 model configuration used for this article.
-
-<!--
-AUTHOR NOTE: the example uses the public Cosmos3-Nano VAE configuration, not a
-benchmark configuration. Pin source links before publication. The optimization article contains the
-benchmark details and can extend the history diagram for temporal batching.
--->
